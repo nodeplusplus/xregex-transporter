@@ -1,0 +1,50 @@
+logger:
+  type: console
+  opts:
+    level: info
+    name: test/file2file
+
+datasources:
+  - name: datasource.file.json
+    type: file
+    opts:
+      connection:
+        uri: !REALPATH mocks/files/records.json
+      fields:
+        id: "id"
+        createdAt: "createdAt"
+        updatedAt: "updatedAt"
+  # - name: datasource.mongodb
+  #   type: mongodb
+  #   opts:
+  #     connection:
+  #       uri: !ENV [XTRANSPORTER_MONGODB_URI, "mongodb://127.0.0.1:27017"]
+  #       database: !ENV [XTRANSPORTER_MONGODB_DATABSE, "test"]
+  #       collection: !ENV [XTRANSPORTER_MONGODB_COLLECTION, "records"]
+  #     fields:
+  #       id: "id"
+  #       createdAt: "createdAt"
+  #       updatedAt: "updatedAt"
+
+storages:
+  - name: storage.file.json
+    type: file
+    opts:
+      connection:
+        uri: !REALPATH temp/files/records.json
+      fields:
+        id: "id"
+        createdAt: "createdAt"
+        updatedAt: "updatedAt"
+
+pipelines:
+  # - name: parser.builtin
+  #   type: parser
+  #   opts:
+  #     schema: !LOADER [mocks/schemas/parser.json]
+  # - name: fitler.builtin
+  #   type: fitler
+  #   opts:
+  #     schema: !LOADER [mocks/schemas/fitler.json]
+  - name: passthrough
+    type: passthrough
