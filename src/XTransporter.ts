@@ -60,7 +60,7 @@ export class XTransporter {
     let nextPayload: IPipelinePayload | void = payload;
 
     for (let pipeline of this.pipelines) {
-      // Return undefined mean stop the pipeline
+      // Return undefined will stop the pipeline
       if (typeof nextPayload === "undefined") break;
 
       nextPayload = await pipeline.exec(nextPayload);

@@ -19,7 +19,7 @@ import {
   DatasourceEvents,
 } from "../types";
 import { EventEmitter } from "events";
-import { FileDatasource } from "../datasources";
+import { FileDatasource, MongoDBDatasource } from "../datasources";
 import { FileStorage } from "../storages";
 import {
   PassthroughPipeline,
@@ -81,6 +81,10 @@ export default class Copy extends Command {
       .bind<IDatasource>("DATASOURCES")
       .to(FileDatasource)
       .whenTargetNamed("file");
+    container
+      .bind<IDatasource>("DATASOURCES")
+      .to(MongoDBDatasource)
+      .whenTargetNamed("mongodb");
     container
       .bind<interfaces.Factory<IDatasource>>("FACTORY<DATASOURCE>")
       .toFactory<IDatasource>(

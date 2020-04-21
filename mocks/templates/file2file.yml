@@ -10,21 +10,19 @@ datasources:
     opts:
       connection:
         uri: !REALPATH mocks/files/records.json
+  - id: datasource.mongodb
+    type: mongodb
+    opts:
+      connection:
+        uri: !ENV [XTRANSPORTER_MONGODB_URI, "mongodb://127.0.0.1:27017"]
+        database: !ENV [XTRANSPORTER_MONGODB_DATABSE, "test"]
+        collection: !ENV [XTRANSPORTER_MONGODB_COLLECTION, "records"]
+        clientOpts:
+          useUnifiedTopology: true
       fields:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
-  # - id: datasource.mongodb
-  #   type: mongodb
-  #   opts:
-  #     connection:
-  #       uri: !ENV [XTRANSPORTER_MONGODB_URI, "mongodb://127.0.0.1:27017"]
-  #       database: !ENV [XTRANSPORTER_MONGODB_DATABSE, "test"]
-  #       collection: !ENV [XTRANSPORTER_MONGODB_COLLECTION, "records"]
-  #     fields:
-  #       id: "id"
-  #       createdAt: "createdAt"
-  #       updatedAt: "updatedAt"
 
 storages:
   - id: storage.file.json
