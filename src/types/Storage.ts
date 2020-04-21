@@ -1,8 +1,6 @@
-import { IPipeline, IPipelineOpts, IPipelinePayload } from "./Pipeline";
+import { IPipeline, IPipelinePayload } from "./Pipeline";
 
-export interface IStorage extends IPipeline {
-  options: Required<IPipelineOpts<IStorageOpts>>;
-}
+export interface IStorage extends IPipeline {}
 
 export interface IStoragePayload extends IPipelinePayload {
   storage?: {

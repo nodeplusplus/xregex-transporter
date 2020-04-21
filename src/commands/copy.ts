@@ -2,7 +2,7 @@ require("dotenv").config();
 import "reflect-metadata";
 import _ from "lodash";
 import { Command, flags } from "@oclif/command";
-import { Container } from "inversify";
+import { Container, interfaces } from "inversify";
 import * as XJSON from "@nodeplusplus/xregex-json";
 import * as XYML from "@nodeplusplus/xregex-yml";
 import * as XLogger from "@nodeplusplus/xregex-logger";
@@ -12,14 +12,16 @@ import {
   IPipeline,
   IDatasource,
   IStorage,
+  IDatasourceOpts,
+  IPipelineOpts,
+  IStorageOpts,
+  IXTransporter,
   DatasourceEvents,
-  IDatasourcePayload,
 } from "../types";
 import { EventEmitter } from "events";
 import { FileDatasource } from "../datasources";
 import { FileStorage } from "../storages";
 import {
-  Pipeline,
   PassthroughPipeline,
   ParserPipeline,
   FilterPipeline,
@@ -30,6 +32,7 @@ import XParser, {
   JSONParser,
 } from "@nodeplusplus/xregex-parser";
 import XFilter, { IXFilter } from "@nodeplusplus/xregex-filter";
+import { XTransporter } from "../XTransporter";
 
 export default class Copy extends Command {
   static description =
@@ -56,85 +59,102 @@ export default class Copy extends Command {
   async run() {
     const { args, flags } = this.parse(Copy);
 
-    const template: ITemplate = _.merge(
+    const settings: ITemplate = _.merge(
       {},
       args.template && (await XYML.parse(args.template)),
       flags.options && (await XJSON.parse(flags.options))
     );
 
     const container = new Container();
+    container.bind<ISettings>("SETTINGS").toConstantValue(settings);
 
     const logger = XLogger.create(
-      template.logger?.type || XLogger.LoggerType.CONSOLE,
-      template.logger?.opts
+      settings.logger?.type || XLogger.LoggerType.CONSOLE,
+      settings.logger?.opts
     );
     container.bind<XLogger.ILogger>("LOGGER").toConstantValue(logger);
+
     const emitter = new EventEmitter();
     container.bind<EventEmitter>("EMITTER").toConstantValue(emitter);
 
-    template.datasources.forEach((options) => {
-      container
-        .bind<IDatasource>("DATASOURCE")
-        .to(FileDatasource)
-        .whenTargetNamed(options.name);
-      container
-        .bind<any>("OPTIONS")
-        .toConstantValue(options)
-        .whenTargetNamed(options.name);
-    });
+    container
+      .bind<IDatasource>("DATASOURCES")
+      .to(FileDatasource)
+      .whenTargetNamed("file");
+    container
+      .bind<interfaces.Factory<IDatasource>>("FACTORY<DATASOURCE>")
+      .toFactory<IDatasource>(
+        (context: interfaces.Context) =>
+          function createDatasource(
+            options: Required<IPipelineOpts<IDatasourceOpts>>
+          ) {
+            const datasource = context.container.getNamed<IDatasource>(
+              "DATASOURCES",
+              options.type
+            );
+            datasource.init(options);
+            return datasource;
+          }
+      );
 
-    const datasources = template.datasources.map((options) => {
-      const datasource = container.resolve<IDatasource>(FileDatasource);
-      datasource.options = options;
-      return datasource;
-    });
-    const storages = template.storages.map((options) => {
-      const storage = container.resolve<IStorage>(FileStorage);
-      storage.options = options;
-      return storage;
-    });
+    container
+      .bind<IStorage>("STORAGES")
+      .to(FileStorage)
+      .whenTargetNamed("file");
+    container
+      .bind<interfaces.Factory<IStorage>>("FACTORY<STORAGE>")
+      .toFactory<IStorage>(
+        (context: interfaces.Context) =>
+          function createDatasource(options: IPipelineOpts<IStorageOpts>) {
+            const storage = context.container.getNamed<IStorage>(
+              "STORAGES",
+              options.type
+            );
+            storage.init(options);
+            return storage;
+          }
+      );
 
-    container.bind<any>("SETTINGS").toConstantValue({});
+    container
+      .bind<IPipeline>("PIPELINES")
+      .to(PassthroughPipeline)
+      .whenTargetNamed("passthrough");
     container.bind<IXFilter>("XFILTER").to(XFilter);
+    container
+      .bind<IPipeline>("PIPELINES")
+      .to(FilterPipeline)
+      .whenTargetNamed("filter");
     container.bind<IXParser>("XPARSER").to(XParser);
     container.bind<IXParser>("XPARSER_ENGINE_HTML").to(HTMLParser);
     container.bind<IXParser>("XPARSER_ENGINE_JSON").to(JSONParser);
-    const pipelines = template.pipelines.map((options) => {
-      let pipeline: any;
-      if (options.type === "passthrough") {
-        pipeline = container.resolve<IPipeline>(PassthroughPipeline);
-      }
-      if (options.type === "parser") {
-        pipeline = container.resolve<IPipeline>(ParserPipeline);
-      }
-      if (options.type === "filter") {
-        pipeline = container.resolve<IPipeline>(FilterPipeline);
-      }
+    container
+      .bind<IPipeline>("PIPELINES")
+      .to(ParserPipeline)
+      .whenTargetNamed("parser");
 
-      pipeline.options = options;
-      return pipeline;
-    });
+    container
+      .bind<interfaces.Factory<IPipeline>>("FACTORY<PIPELINE>")
+      .toFactory<IPipeline>(
+        (context: interfaces.Context) =>
+          function createDatasource(options: IPipelineOpts<IPipelineOpts>) {
+            const pipeline = context.container.getNamed<IPipeline>(
+              "PIPELINES",
+              options.type
+            );
+            pipeline.init(options);
+            return pipeline;
+          }
+      );
 
-    container.bind<IPipeline[]>("PIPELINES").toConstantValue(pipelines as any);
-    const pipline = container.resolve<IPipeline>(Pipeline);
+    const transporter = container.resolve<IXTransporter>(XTransporter);
 
-    await Promise.all([
-      ...datasources.map((datasource) => datasource.start()),
-      ...storages.map((storage) => storage.start()),
-      pipline.start(),
-    ]);
+    await transporter.start();
 
-    const payload: IDatasourcePayload = {
+    emitter.emit(DatasourceEvents.INIT, {
       datasource: { limit: 1 },
       records: [],
-    };
-    emitter.emit(DatasourceEvents.INIT, payload);
-
-    // await Promise.all([
-    //   ...datasources.map((datasource) => datasource.stop()),
-    //   ...storages.map((storage) => storage.stop()),
-    //   pipline.stop(),
-    // ]);
+    });
+    // await transporter.stop();
   }
 }
 

@@ -1,10 +1,9 @@
 export interface IPipeline {
-  options: IPipelineOpts;
-
   start(): Promise<void>;
   stop(): Promise<void>;
 
   exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;
+  init(options: IPipelineOpts): void;
 }
 
 export interface IPipelinePayload<R = any> {
@@ -13,7 +12,7 @@ export interface IPipelinePayload<R = any> {
 }
 
 export interface IPipelineOpts<O = any> {
-  name: string;
+  id: string;
   type: string;
   opts?: O;
 }

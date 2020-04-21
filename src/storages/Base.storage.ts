@@ -11,16 +11,22 @@ import {
 } from "../types";
 
 @injectable()
-export abstract class BaseStorage implements IStorage {
+export abstract class BaseStorage<CCO = any> implements IStorage {
   @inject("EMITTER") protected emitter!: EventEmitter;
 
-  public options!: Required<IPipelineOpts<IStorageOpts>>;
+  protected id!: string;
+  protected options!: IStorageOpts<CCO>;
 
   public async start() {
     this.emitter.on(PipelineEvents.NEXT, this.exec.bind(this));
   }
   public async stop() {
     this.emitter.removeAllListeners(PipelineEvents.NEXT);
+  }
+
+  public init(options: Required<IPipelineOpts<IStorageOpts>>) {
+    this.id = options.id;
+    this.options = options.opts;
   }
 
   abstract exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;

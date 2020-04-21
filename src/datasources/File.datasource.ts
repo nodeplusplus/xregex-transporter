@@ -21,17 +21,17 @@ export class FileDatasource extends BaseDatasource {
   private input!: fs.ReadStream;
 
   public async start() {
-    const uri = this.options.opts.connection.uri;
+    const uri = this.options.connection.uri;
     this.input = fs.createReadStream(uri);
 
     super.start();
-    this.logger.info(`DATASOURCE:FILE.STARTED`);
+    this.logger.info(`DATASOURCE:FILE.STARTED`, { id: this.id });
   }
   public async stop() {
     this.input.destroy();
 
     super.stop();
-    this.logger.info(`DATASOURCE:FILE.STOPPED`);
+    this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
   public async exec(payload: IDatasourcePayload) {
@@ -53,7 +53,10 @@ export class FileDatasource extends BaseDatasource {
       this.emitter.emit(DatasourceEvents.NEXT, nextPayload);
     });
     pipeline.on("end", () => {
-      const donePayload: IPipelinePayload = { records: [], total };
+      const donePayload: IPipelinePayload = {
+        records: [],
+        total,
+      };
       this.emitter.emit(DatasourceEvents.DONE, donePayload);
     });
   }

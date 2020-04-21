@@ -1,22 +1,21 @@
 import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import { IPipeline, IPipelineOpts, IPipelinePayload } from "../types";
+import { IPipelinePayload } from "../types";
+import { BasePipeline } from "./Base.pipeline";
 
 @injectable()
-export class PassthroughPipeline implements IPipeline {
+export class PassthroughPipeline extends BasePipeline {
   @inject("LOGGER") private logger!: ILogger;
 
-  public options!: IPipelineOpts;
-
   public async start() {
-    this.logger.info(`PIPELINE:PASSTHROUGH.STARTED`);
+    this.logger.info(`PIPELINE:PASSTHROUGH.STARTED`, { id: this.id });
   }
   public async stop() {
-    this.logger.info(`PIPELINE:PASSTHROUGH.STOPPED`);
+    this.logger.info(`PIPELINE:PASSTHROUGH.STOPPED`, { id: this.id });
   }
 
   public async exec(payload: IPipelinePayload) {
-    return payload;
+    return { ...payload } as IPipelinePayload;
   }
 }

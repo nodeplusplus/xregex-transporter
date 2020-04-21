@@ -17,27 +17,25 @@ import { BaseStorage } from "./Base.storage";
 export class FileStorage extends BaseStorage {
   @inject("LOGGER") private logger!: ILogger;
 
-  public options!: Required<IPipelineOpts<IStorageOpts>>;
-
   private output!: fs.WriteStream;
 
   public async start() {
-    const uri = this.options.opts.connection.uri;
+    const uri = this.options.connection.uri;
     await this.ensureFileExist(uri);
     this.output = fs.createWriteStream(uri, { flags: "a" });
 
     super.start();
-    this.logger.info(`STORAGE:FILE.STARTED`);
+    this.logger.info(`STORAGE:FILE.STARTED`, { id: this.id });
   }
   public async stop() {
     this.output.end();
 
     super.stop();
-    this.logger.info(`STORAGE:FILE.STOPPED`);
+    this.logger.info(`STORAGE:FILE.STOPPED`, { id: this.id });
   }
 
   public async exec(payload: IStoragePayload) {
-    const fields = this.options.opts.fields;
+    const fields = this.options.fields;
 
     const records = payload.records.map((r) => _.get(r, fields.id));
 
@@ -46,9 +44,8 @@ export class FileStorage extends BaseStorage {
     );
 
     this.output.on("finish", () => {
-      const doneEventName = [StorageEvents.DONE, this.options.name].join("/");
       const donePayload: IPipelinePayload = { records };
-      this.emitter.emit(doneEventName, donePayload);
+      this.emitter.emit(StorageEvents.DONE, donePayload);
     });
   }
 

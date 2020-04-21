@@ -5,7 +5,7 @@ logger:
     name: test/file2file
 
 datasources:
-  - name: datasource.file.json
+  - id: datasource.file.json
     type: file
     opts:
       connection:
@@ -14,7 +14,7 @@ datasources:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
-  # - name: datasource.mongodb
+  # - id: datasource.mongodb
   #   type: mongodb
   #   opts:
   #     connection:
@@ -27,7 +27,7 @@ datasources:
   #       updatedAt: "updatedAt"
 
 storages:
-  - name: storage.file.json
+  - id: storage.file.json
     type: file
     opts:
       connection:
@@ -38,13 +38,13 @@ storages:
         updatedAt: "updatedAt"
 
 pipelines:
-  - name: parser.builtin
+  - id: parser.builtin
     type: parser
     opts:
       schema: !LOADER [mocks/schemas/parser.json]
-  - name: filter.builtin
+  - id: filter.builtin
     type: filter
     opts:
       schema: !LOADER [mocks/schemas/filter.json]
-  - name: passthrough
+  - id: passthrough
     type: passthrough
