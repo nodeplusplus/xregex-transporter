@@ -18,7 +18,18 @@ import {
 import { EventEmitter } from "events";
 import { FileDatasource } from "../datasources";
 import { FileStorage } from "../storages";
-import { Pipeline, PassthroughPipeline } from "../pipelines";
+import {
+  Pipeline,
+  PassthroughPipeline,
+  ParserPipeline,
+  FilterPipeline,
+} from "../pipelines";
+import XParser, {
+  IXParser,
+  HTMLParser,
+  JSONParser,
+} from "@nodeplusplus/xregex-parser";
+import XFilter, { IXFilter } from "@nodeplusplus/xregex-filter";
 
 export default class Copy extends Command {
   static description =
@@ -82,13 +93,29 @@ export default class Copy extends Command {
       storage.options = options;
       return storage;
     });
+
+    container.bind<any>("SETTINGS").toConstantValue({});
+    container.bind<IXFilter>("XFILTER").to(XFilter);
+    container.bind<IXParser>("XPARSER").to(XParser);
+    container.bind<IXParser>("XPARSER_ENGINE_HTML").to(HTMLParser);
+    container.bind<IXParser>("XPARSER_ENGINE_JSON").to(JSONParser);
     const pipelines = template.pipelines.map((options) => {
-      const pipeline = container.resolve<IPipeline>(PassthroughPipeline);
+      let pipeline: any;
+      if (options.type === "passthrough") {
+        pipeline = container.resolve<IPipeline>(PassthroughPipeline);
+      }
+      if (options.type === "parser") {
+        pipeline = container.resolve<IPipeline>(ParserPipeline);
+      }
+      if (options.type === "filter") {
+        pipeline = container.resolve<IPipeline>(FilterPipeline);
+      }
+
       pipeline.options = options;
       return pipeline;
     });
 
-    container.bind<IPipeline[]>("PIPELINES").toConstantValue(pipelines);
+    container.bind<IPipeline[]>("PIPELINES").toConstantValue(pipelines as any);
     const pipline = container.resolve<IPipeline>(Pipeline);
 
     await Promise.all([

@@ -1,1 +1,3 @@
-{}
+{
+  "comments": [{ "id": "filter.toNumber", "priority": 1 }]
+}

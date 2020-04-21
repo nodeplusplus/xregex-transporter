@@ -8,8 +8,10 @@
   },
   "bugs": "https://github.com/nodeplusplus/xregex-transporter/issues",
   "dependencies": {
+    "@nodeplusplus/xregex-filter": "^1.0.0",
     "@nodeplusplus/xregex-json": "^1.0.0",
     "@nodeplusplus/xregex-logger": "^1.0.0",
+    "@nodeplusplus/xregex-parser": "^1.0.3",
     "@nodeplusplus/xregex-yml": "^1.0.0",
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.15.1",
