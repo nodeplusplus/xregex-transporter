@@ -6,12 +6,12 @@ logger:
 
 datasources:
   - id: datasource.file.json
-    type: file
+    type: FileDatasource
     opts:
       connection:
         uri: !REALPATH mocks/files/records.json
   - id: datasource.mongodb
-    type: mongodb
+    type: MongoDBDatasource
     opts:
       connection:
         uri: !ENV [XTRANSPORTER_MONGODB_URI, "mongodb://127.0.0.1:27017"]
@@ -26,7 +26,7 @@ datasources:
 
 storages:
   - id: storage.file.json
-    type: file
+    type: FileStorage
     opts:
       connection:
         uri: !REALPATH temp/files/records.json
@@ -37,12 +37,12 @@ storages:
 
 pipelines:
   - id: parser.builtin
-    type: parser
+    type: ParserPipeline
     opts:
       schema: !LOADER [mocks/schemas/parser.json]
   - id: filter.builtin
-    type: filter
+    type: FilterPipeline
     opts:
       schema: !LOADER [mocks/schemas/filter.json]
   - id: passthrough
-    type: passthrough
+    type: PassthroughPipeline

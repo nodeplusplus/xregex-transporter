@@ -14,10 +14,11 @@ import {
   IPipelineOpts,
   IPipelinePayload,
   PipelineEvents,
+  IXTransporter,
 } from "./types";
 
 @injectable()
-export class XTransporter {
+export class XTransporter implements IXTransporter {
   @inject("LOGGER") private logger!: ILogger;
   @inject("EMITTER") private emitter!: EventEmitter;
 
@@ -56,7 +57,7 @@ export class XTransporter {
     this.logger.info("XTRANSPORTER:STOPPED");
   }
 
-  public async exec(payload: IDatasourcePayload) {
+  public async exec(payload: IPipelinePayload) {
     let nextPayload: IPipelinePayload | void = payload;
 
     for (let pipeline of this.pipelines) {
@@ -67,5 +68,10 @@ export class XTransporter {
     }
 
     this.emitter.emit(PipelineEvents.NEXT, nextPayload);
+  }
+
+  public trigger(payload: Partial<IDatasourcePayload>) {
+    const inittPayload: IPipelinePayload = { records: [], ...payload };
+    this.emitter.emit(DatasourceEvents.INIT, inittPayload);
   }
 }
