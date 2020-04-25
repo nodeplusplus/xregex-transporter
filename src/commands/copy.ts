@@ -45,7 +45,7 @@ export default class Copy extends Command {
     const transporter = builder.getTransporter();
     await transporter.start();
 
-    transporter.trigger({ datasource: { limit: 1 } });
+    transporter.exec({ datasource: { limit: 1 } });
   }
 }
 

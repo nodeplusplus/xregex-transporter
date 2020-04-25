@@ -22,6 +22,8 @@ export class XTransporter implements IXTransporter {
   @inject("LOGGER") private logger!: ILogger;
   @inject("EMITTER") private emitter!: EventEmitter;
 
+  private id!: string;
+
   private datasources: IDatasource[];
   private pipelines: IPipeline[];
   private storages: IStorage[];
@@ -41,7 +43,7 @@ export class XTransporter implements IXTransporter {
   }
 
   public async start() {
-    this.emitter.on(DatasourceEvents.NEXT, this.exec.bind(this));
+    this.emitter.on(DatasourceEvents.NEXT, this.execLayers.bind(this));
 
     await Promise.all(this.storages.map((storage) => storage.start()));
     await Promise.all(this.pipelines.map((pipeline) => pipeline.start()));
@@ -57,7 +59,7 @@ export class XTransporter implements IXTransporter {
     this.logger.info("XTRANSPORTER:STOPPED");
   }
 
-  public async exec(payload: IPipelinePayload) {
+  public async execLayers(payload: IPipelinePayload) {
     let nextPayload: IPipelinePayload | void = payload;
 
     for (let pipeline of this.pipelines) {
@@ -70,7 +72,11 @@ export class XTransporter implements IXTransporter {
     this.emitter.emit(PipelineEvents.NEXT, nextPayload);
   }
 
-  public trigger(payload: Partial<IDatasourcePayload>) {
+  public init(options: IPipelineOpts) {
+    this.id = options.id;
+  }
+
+  public async exec(payload: Partial<IDatasourcePayload>) {
     const inittPayload: IPipelinePayload = { records: [], ...payload };
     this.emitter.emit(DatasourceEvents.INIT, inittPayload);
   }
