@@ -43,7 +43,6 @@ export class TemplateBuilder extends BaseBuilder {
     this.useDatasources(settings.datasources);
     this.useStorages(settings.storages);
     this.usePipelines(settings.pipelines);
-    this.registerFactory();
   }
 
   private useDatasources(

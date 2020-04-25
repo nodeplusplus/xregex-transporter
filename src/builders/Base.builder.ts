@@ -19,10 +19,15 @@ export class BaseBuilder {
 
   constructor() {
     this.reset();
+    this.registerFactory();
   }
 
   public reset() {
     this.container = new Container();
+  }
+
+  public getTransporter(): IXTransporter {
+    return this.container.resolve<IXTransporter>(XTransporter);
   }
 
   public setSettings(settings: ISettings) {
@@ -58,6 +63,7 @@ export class BaseBuilder {
       .to(Datasource)
       .whenTargetNamed(Datasource.name);
   }
+
   public addStorage(Storage: interfaces.Newable<IStorage>) {
     this.container
       .bind<IStorage>("STORAGES")
@@ -72,7 +78,7 @@ export class BaseBuilder {
       .whenTargetNamed(Pipeline.name);
   }
 
-  public registerFactory() {
+  private registerFactory() {
     this.container
       .bind<interfaces.Factory<IDatasource>>("FACTORY<DATASOURCE>")
       .toFactory<IDatasource>(this.createDatasource);
@@ -84,10 +90,6 @@ export class BaseBuilder {
     this.container
       .bind<interfaces.Factory<IPipeline>>("FACTORY<PIPELINE>")
       .toFactory<IPipeline>(this.createPipeline);
-  }
-
-  public getTransporter(): IXTransporter {
-    return this.container.resolve<IXTransporter>(XTransporter);
   }
 
   private createDatasource(context: interfaces.Context) {
