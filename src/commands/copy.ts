@@ -42,7 +42,9 @@ export default class Copy extends Command {
 
     const builder = new Builder();
     builder.useTemplate(template);
+    builder.make();
     const transporter = builder.getTransporter();
+    transporter.init({ id: "transporter.copy", type: "XTransporter" });
     await transporter.start();
 
     transporter.exec({ datasource: { limit: 1 } });

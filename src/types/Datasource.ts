@@ -12,7 +12,7 @@ export interface IDatasourcePayload extends IPipelinePayload {
 
 export interface IDatasourceOpts<CCO = any> {
   connection: IDatasourceConnection<CCO>;
-  fields?: IDatasourceFields;
+  fields: IDatasourceFields;
 }
 
 export interface IDatasourceConnection<CO = any> {
@@ -29,7 +29,6 @@ export interface IDatasourceFields {
 }
 
 export enum DatasourceEvents {
-  INIT = "dattasource.init",
   NEXT = "dattasource.next",
   DONE = "dattasource.done",
 }

@@ -1,7 +1,12 @@
 import _ from "lodash";
 import { injectable } from "inversify";
 
-import { IPipeline, IPipelineOpts, IPipelinePayload } from "../types";
+import {
+  IPipeline,
+  IPipelineOpts,
+  IPipelinePayload,
+  IPipelineResponse,
+} from "../types";
 
 @injectable()
 export abstract class BasePipeline<O = any> implements IPipeline {
@@ -15,5 +20,8 @@ export abstract class BasePipeline<O = any> implements IPipeline {
 
   abstract start(): Promise<void>;
   abstract stop(): Promise<void>;
-  abstract exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;
+  abstract exec(
+    payload: IPipelinePayload,
+    prevSteps: string[]
+  ): Promise<IPipelineResponse>;
 }

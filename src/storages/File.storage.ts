@@ -1,17 +1,11 @@
 import fs from "fs";
-import path from "path";
 import _ from "lodash";
 import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import {
-  IStorageOpts,
-  IStoragePayload,
-  StorageEvents,
-  IPipelinePayload,
-  IPipelineOpts,
-} from "../types";
+import { IStoragePayload, StorageEvents, PiplineProgress } from "../types";
 import { BaseStorage } from "./Base.storage";
+import * as helpers from "../helpers";
 
 @injectable()
 export class FileStorage extends BaseStorage {
@@ -21,7 +15,7 @@ export class FileStorage extends BaseStorage {
 
   public async start() {
     const uri = this.options.connection.uri;
-    await this.ensureFileExist(uri);
+    await helpers.file.ensureExist(uri);
     this.output = fs.createWriteStream(uri, { flags: "a" });
 
     super.start();
@@ -34,8 +28,9 @@ export class FileStorage extends BaseStorage {
     this.logger.info(`STORAGE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IStoragePayload) {
+  public async exec(payload: IStoragePayload, prevSteps: string[]) {
     const fields = this.options.fields;
+    const steps = [...prevSteps, this.id];
 
     const records = payload.records.map((r) => _.get(r, fields.id));
 
@@ -44,33 +39,25 @@ export class FileStorage extends BaseStorage {
     );
 
     this.output.on("finish", () => {
-      const donePayload: IPipelinePayload = { records };
-      this.emitter.emit(StorageEvents.DONE, donePayload);
+      if (payload.progress === PiplineProgress.START) {
+        return this.bus.emit(
+          StorageEvents.NEXT,
+          {
+            progress: payload.progress,
+            records,
+          },
+          steps
+        );
+      }
+
+      this.bus.emit(
+        StorageEvents.DONE,
+        {
+          progress: PiplineProgress.END,
+          records,
+        },
+        steps
+      );
     });
-  }
-
-  private async ensureFileExist(filepath: string) {
-    const touch = (filepath: string) => {
-      return new Promise((resolve, reject) => {
-        const time = new Date();
-        fs.utimes(filepath, time, time, (err) => {
-          if (err) {
-            return fs.open(filepath, "w", (err, fd) => {
-              if (err) return reject(err);
-              fs.close(fd, (err) => (err ? reject(err) : resolve(fd)));
-            });
-          }
-          resolve();
-        });
-      });
-    };
-
-    const dirname = path.dirname(filepath);
-    const dirstats = await fs.promises.stat(dirname).catch(() => null);
-    if (!dirstats || !dirstats.isDirectory()) {
-      await fs.promises.mkdir(dirname, { recursive: true });
-    }
-
-    await touch(filepath);
   }
 }

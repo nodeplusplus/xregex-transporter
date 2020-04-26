@@ -23,3 +23,7 @@ export interface IXTransporter extends IPipeline {
 
   exec(payload: Partial<IDatasourcePayload>): Promise<void>;
 }
+
+export enum TransporterEvents {
+  NEXT = "transporter.next",
+}

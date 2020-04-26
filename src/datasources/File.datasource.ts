@@ -11,6 +11,7 @@ import {
   IDatasourcePayload,
   DatasourceEvents,
   IPipelinePayload,
+  PiplineProgress,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -34,8 +35,12 @@ export class FileDatasource extends BaseDatasource {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload) {
+  public async exec(payload: IDatasourcePayload, prevSteps: string[]) {
     const batchSize = payload.datasource?.limit || 100;
+    const steps = [...prevSteps, this.id];
+    this.logger.info("TRANSPORTER:EXEC", {
+      steps,
+    });
 
     const pipeline = chain([
       this.input,
@@ -49,15 +54,20 @@ export class FileDatasource extends BaseDatasource {
       total += rows.length;
       const records = rows.map((r) => r.value);
 
-      const nextPayload: IPipelinePayload = { records };
-      this.emitter.emit(DatasourceEvents.NEXT, nextPayload);
+      const nextPayload: IPipelinePayload = {
+        progress: payload.progress,
+        records,
+      };
+      this.bus.emit(DatasourceEvents.NEXT, nextPayload, steps);
     });
     pipeline.on("end", () => {
       const donePayload: IPipelinePayload = {
+        progress: PiplineProgress.END,
         records: [],
         total,
       };
-      this.emitter.emit(DatasourceEvents.DONE, donePayload);
+      this.bus.emit(DatasourceEvents.NEXT, donePayload, steps);
+      this.bus.emit(DatasourceEvents.DONE, donePayload, steps);
     });
   }
 }

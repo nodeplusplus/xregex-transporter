@@ -12,6 +12,7 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   IDatasourceFields,
+  PiplineProgress,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -39,9 +40,10 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload) {
+  public async exec(payload: IDatasourcePayload, prevSteps: string[]) {
     const { filter, limit } = { limit: 100, ...payload.datasource };
 
+    const steps = [...prevSteps, this.id];
     const fields = this.options.fields as IDatasourceFields;
 
     const records = await this.collection
@@ -53,14 +55,18 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
       ])
       .toArray();
 
-    const nextPayload: IPipelinePayload = { records };
-    this.emitter.emit(DatasourceEvents.NEXT, nextPayload);
+    const nextPayload: IPipelinePayload = {
+      progress: payload.progress,
+      records,
+    };
+    this.bus.emit(DatasourceEvents.NEXT, nextPayload, steps);
 
     const total = await this.collection.countDocuments({ ...filter }, {});
     const donePayload: IPipelinePayload = {
+      progress: PiplineProgress.END,
       total,
       records: records.map((r) => _.get(r, fields.id)),
     };
-    this.emitter.emit(DatasourceEvents.DONE, donePayload);
+    this.bus.emit(DatasourceEvents.DONE, donePayload, steps);
   }
 }

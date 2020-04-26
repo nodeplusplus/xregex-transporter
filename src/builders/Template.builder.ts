@@ -1,23 +1,20 @@
-import { EventEmitter } from "events";
-import { interfaces, Container } from "inversify";
 import {
   LoggerType,
-  ILogger,
   create as createLogger,
 } from "@nodeplusplus/xregex-logger";
+import XParser, {
+  IXParser,
+  HTMLParser,
+  JSONParser,
+} from "@nodeplusplus/xregex-parser";
+import XFilter, { IXFilter } from "@nodeplusplus/xregex-filter";
 
 import {
-  IDatasource,
-  IStorage,
-  IPipeline,
-  IXTransporter,
   ITemplate,
-  ISettings,
   IPipelineOpts,
   IDatasourceOpts,
   IStorageOpts,
 } from "../types";
-import { XTransporter } from "../XTransporter";
 import { FileDatasource, MongoDBDatasource } from "../datasources";
 import { FileStorage } from "../storages";
 import {
@@ -25,21 +22,20 @@ import {
   ParserPipeline,
   FilterPipeline,
 } from "../pipelines";
-import XParser, {
-  IXParser,
-  HTMLParser,
-  JSONParser,
-} from "@nodeplusplus/xregex-parser";
-import XFilter, { IXFilter } from "@nodeplusplus/xregex-filter";
+import { LocalBus } from "../buses";
 import { BaseBuilder } from "./Base.builder";
 
 export class TemplateBuilder extends BaseBuilder {
+  public make() {
+    if (!this.container.isBound("BUS")) this.setBus(LocalBus);
+    super.make();
+  }
+
   public useTemplate({ logger: loggerOpts, ...settings }: ITemplate) {
     this.setSettings(settings);
     this.setLogger(
       createLogger(loggerOpts?.type || LoggerType.CONSOLE, loggerOpts?.opts)
     );
-    this.setEmitter();
     this.useDatasources(settings.datasources);
     this.useStorages(settings.storages);
     this.usePipelines(settings.pipelines);

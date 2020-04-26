@@ -11,22 +11,35 @@ import {
   IPipelineOpts,
   IDatasourceOpts,
   IStorageOpts,
+  IEventBus,
 } from "../types";
 import { XTransporter } from "../XTransporter";
 
 export class BaseBuilder {
   protected container!: Container;
+  protected made: boolean = false;
 
   constructor() {
     this.reset();
     this.registerFactory();
   }
 
+  public setBus(bus: interfaces.Newable<IEventBus>) {
+    this.container.bind<IEventBus>("BUS").to(bus).inSingletonScope();
+  }
+
   public reset() {
     this.container = new Container();
+    this.made = false;
+  }
+
+  public make() {
+    this.made = true;
   }
 
   public getTransporter(): IXTransporter {
+    if (!this.made) throw new Error("Please call .make before!");
+
     return this.container.resolve<IXTransporter>(XTransporter);
   }
 
@@ -46,15 +59,6 @@ export class BaseBuilder {
     }
 
     this.container.bind<ILogger>("LOGGER").toConstantValue(logger);
-  }
-
-  public setEmitter(emitter: EventEmitter = new EventEmitter()) {
-    if (this.container.isBound("EMITTER")) {
-      this.container.rebind<EventEmitter>("EMITTER").toConstantValue(emitter);
-      return;
-    }
-
-    this.container.bind<EventEmitter>("EMITTER").toConstantValue(emitter);
   }
 
   public addDatasource(Datasource: interfaces.Newable<IDatasource>) {

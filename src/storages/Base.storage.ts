@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import _ from "lodash";
 import { injectable, inject } from "inversify";
 
@@ -8,20 +7,22 @@ import {
   PipelineEvents,
   IPipelinePayload,
   IPipelineOpts,
+  IEventBus,
+  IPipelineResponse,
 } from "../types";
 
 @injectable()
 export abstract class BaseStorage<CCO = any> implements IStorage {
-  @inject("EMITTER") protected emitter!: EventEmitter;
+  @inject("BUS") protected bus!: IEventBus;
 
   protected id!: string;
   protected options!: IStorageOpts<CCO>;
 
   public async start() {
-    this.emitter.on(PipelineEvents.NEXT, this.exec.bind(this));
+    this.bus.on(PipelineEvents.NEXT, this.exec.bind(this));
   }
   public async stop() {
-    this.emitter.removeAllListeners(PipelineEvents.NEXT);
+    this.bus.removeAllListeners(PipelineEvents.NEXT);
   }
 
   public init(options: Required<IPipelineOpts<IStorageOpts>>) {
@@ -29,5 +30,8 @@ export abstract class BaseStorage<CCO = any> implements IStorage {
     this.options = options.opts;
   }
 
-  abstract exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;
+  abstract exec(
+    payload: IPipelinePayload,
+    prevSteps: string[]
+  ): Promise<IPipelineResponse>;
 }

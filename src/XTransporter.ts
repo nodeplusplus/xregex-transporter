@@ -15,12 +15,16 @@ import {
   IPipelinePayload,
   PipelineEvents,
   IXTransporter,
+  PiplineProgress,
+  IEventBus,
+  IPipelineResponse,
+  TransporterEvents,
 } from "./types";
 
 @injectable()
 export class XTransporter implements IXTransporter {
   @inject("LOGGER") private logger!: ILogger;
-  @inject("EMITTER") private emitter!: EventEmitter;
+  @inject("BUS") private bus!: IEventBus;
 
   private id!: string;
 
@@ -43,7 +47,7 @@ export class XTransporter implements IXTransporter {
   }
 
   public async start() {
-    this.emitter.on(DatasourceEvents.NEXT, this.execLayers.bind(this));
+    this.bus.on(DatasourceEvents.NEXT, this.execLayers.bind(this));
 
     await Promise.all(this.storages.map((storage) => storage.start()));
     await Promise.all(this.pipelines.map((pipeline) => pipeline.start()));
@@ -51,7 +55,7 @@ export class XTransporter implements IXTransporter {
     this.logger.info("XTRANSPORTER:STARTED");
   }
   public async stop() {
-    this.emitter.removeAllListeners(DatasourceEvents.NEXT);
+    this.bus.removeAllListeners(DatasourceEvents.NEXT);
 
     await Promise.all(this.datasources.map((datasource) => datasource.stop()));
     await Promise.all(this.pipelines.map((pipeline) => pipeline.stop()));
@@ -59,17 +63,18 @@ export class XTransporter implements IXTransporter {
     this.logger.info("XTRANSPORTER:STOPPED");
   }
 
-  public async execLayers(payload: IPipelinePayload) {
-    let nextPayload: IPipelinePayload | void = payload;
+  public async execLayers(payload: IPipelinePayload, prevSteps: string[]) {
+    let nextArgs: IPipelineResponse = [payload, prevSteps];
 
     for (let pipeline of this.pipelines) {
-      // Return undefined will stop the pipeline
-      if (typeof nextPayload === "undefined") break;
+      // Return undefined will break the pipeline
+      // and storage process is NOT triggered
+      if (typeof nextArgs === "undefined") break;
 
-      nextPayload = await pipeline.exec(nextPayload);
+      nextArgs = await pipeline.exec(nextArgs[0], [...nextArgs[1]]);
     }
 
-    this.emitter.emit(PipelineEvents.NEXT, nextPayload);
+    if (nextArgs) this.bus.emit(PipelineEvents.NEXT, ...nextArgs);
   }
 
   public init(options: IPipelineOpts) {
@@ -77,7 +82,14 @@ export class XTransporter implements IXTransporter {
   }
 
   public async exec(payload: Partial<IDatasourcePayload>) {
-    const inittPayload: IPipelinePayload = { records: [], ...payload };
-    this.emitter.emit(DatasourceEvents.INIT, inittPayload);
+    const inittPayload: IPipelinePayload = {
+      progress: PiplineProgress.START,
+      records: [],
+      ...payload,
+    };
+    this.logger.info("TRANSPORTER:EXEC", {
+      steps: [this.id],
+    });
+    this.bus.emit(TransporterEvents.NEXT, inittPayload, [this.id]);
   }
 }

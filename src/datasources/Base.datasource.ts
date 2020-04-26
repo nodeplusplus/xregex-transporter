@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import { injectable, inject } from "inversify";
 
 import {
@@ -6,22 +5,24 @@ import {
   IDatasourceOpts,
   DatasourceEvents,
   IDatasourcePayload,
-  IPipelinePayload,
+  IPipelineResponse,
   IPipelineOpts,
+  IEventBus,
+  TransporterEvents,
 } from "../types";
 
 @injectable()
 export abstract class BaseDatasource<CCO = any> implements IDatasource {
-  @inject("EMITTER") protected emitter!: EventEmitter;
+  @inject("BUS") protected bus!: IEventBus<IDatasourcePayload>;
 
   protected id!: string;
   protected options!: IDatasourceOpts<CCO>;
 
   public async start() {
-    this.emitter.on(DatasourceEvents.INIT, this.exec.bind(this));
+    this.bus.on(TransporterEvents.NEXT, this.exec.bind(this));
   }
   public async stop() {
-    this.emitter.removeAllListeners(DatasourceEvents.NEXT);
+    this.bus.removeAllListeners(DatasourceEvents.NEXT);
   }
 
   public init(options: Required<IPipelineOpts<IDatasourceOpts>>) {
@@ -29,5 +30,8 @@ export abstract class BaseDatasource<CCO = any> implements IDatasource {
     this.options = options.opts;
   }
 
-  abstract exec(payload: IDatasourcePayload): Promise<IPipelinePayload | void>;
+  abstract exec(
+    payload: IDatasourcePayload,
+    prevSteps: string[]
+  ): Promise<IPipelineResponse>;
 }
