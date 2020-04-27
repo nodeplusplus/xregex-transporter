@@ -3,7 +3,12 @@ import _ from "lodash";
 import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import { IStoragePayload, StorageEvents, PiplineProgress } from "../types";
+import {
+  IStoragePayload,
+  StorageEvents,
+  PiplineProgress,
+  IPipelineTracker,
+} from "../types";
 import { BaseStorage } from "./Base.storage";
 import * as helpers from "../helpers";
 
@@ -28,34 +33,23 @@ export class FileStorage extends BaseStorage {
     this.logger.info(`STORAGE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IStoragePayload, prevSteps: string[]) {
+  public async exec(payload: IStoragePayload, tracker: IPipelineTracker) {
     const fields = this.options.fields;
-    const steps = [...prevSteps, this.id];
-
-    const records = payload.records.map((r) => _.get(r, fields.id));
-
-    payload.records.forEach((record) =>
-      this.output.write(`${JSON.stringify(record)}\n`)
-    );
+    tracker.steps.push(this.id);
 
     if (payload.progress === PiplineProgress.START) {
-      this.bus.emit(
-        StorageEvents.NEXT,
-        {
-          progress: payload.progress,
-          records,
-        },
-        steps
+      payload.records.forEach((record) =>
+        this.output.write(`${JSON.stringify(record)}\n`)
       );
+
+      const nextPayload = {
+        progress: payload.progress,
+        records: payload.records.map((r) => _.get(r, fields.id)),
+      };
+      this.bus.emit(StorageEvents.NEXT, nextPayload, tracker);
     } else {
-      this.bus.emit(
-        StorageEvents.DONE,
-        {
-          progress: PiplineProgress.END,
-          records,
-        },
-        steps
-      );
+      const donePayload = { ...payload, progress: PiplineProgress.END };
+      this.bus.emit(StorageEvents.DONE, donePayload, tracker);
     }
   }
 }

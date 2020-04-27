@@ -1,7 +1,11 @@
 import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import { IPipelinePayload, IPipelineResponse } from "../types";
+import {
+  IPipelinePayload,
+  IPipelineResponse,
+  IPipelineTracker,
+} from "../types";
 import { BasePipeline } from "./Base.pipeline";
 
 @injectable()
@@ -15,7 +19,9 @@ export class PassthroughPipeline extends BasePipeline {
     this.logger.info(`PIPELINE:PASSTHROUGH.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IPipelinePayload, prevSteps: string[]) {
-    return [{ ...payload }, [...prevSteps, this.id]] as IPipelineResponse;
+  public async exec(payload: IPipelinePayload, tracker: IPipelineTracker) {
+    tracker.steps.push(this.id);
+
+    return [{ ...payload }, tracker] as IPipelineResponse;
   }
 }

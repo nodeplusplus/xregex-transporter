@@ -1,6 +1,8 @@
 import { IPipeline, IPipelinePayload } from "./Pipeline";
 
-export interface IDatasource extends IPipeline {}
+export interface IDatasource extends IPipeline {
+  getInfo(): { id: string; options: IDatasourceOpts };
+}
 
 export interface IDatasourcePayload extends IPipelinePayload {
   datasource: {

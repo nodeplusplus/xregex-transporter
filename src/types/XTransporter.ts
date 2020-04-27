@@ -21,8 +21,10 @@ export interface IXTransporter extends IPipeline {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  exec(payload: Partial<IDatasourcePayload>): Promise<void>;
-  execOnce(payload: Partial<IDatasourcePayload>): Promise<IPipelineResponse>;
+  exec(payload: Partial<IDatasourcePayload>): Promise<IPipelineResponse>;
+  execOnce(
+    payload: Partial<IDatasourcePayload>
+  ): Promise<{ [name: string]: any[] }>;
 }
 
 export enum TransporterEvents {

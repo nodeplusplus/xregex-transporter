@@ -9,6 +9,7 @@ import {
   IPipelineOpts,
   IEventBus,
   IPipelineResponse,
+  IPipelineTracker,
 } from "../types";
 
 @injectable()
@@ -29,9 +30,12 @@ export abstract class BaseStorage<CCO = any> implements IStorage {
     this.id = options.id;
     this.options = options.opts;
   }
+  public getInfo() {
+    return { id: this.id, options: this.options };
+  }
 
   abstract exec(
     payload: IPipelinePayload,
-    prevSteps: string[]
+    tracker: IPipelineTracker
   ): Promise<IPipelineResponse>;
 }

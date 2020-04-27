@@ -1,4 +1,5 @@
 import fs from "fs";
+import _ from "lodash";
 import { injectable, inject } from "inversify";
 import { parser } from "stream-json";
 import { chain } from "stream-chain";
@@ -12,6 +13,8 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   PiplineProgress,
+  IPipelineTracker,
+  IDatasourceFields,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -35,11 +38,13 @@ export class FileDatasource extends BaseDatasource {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload, prevSteps: string[]) {
+  public async exec(payload: IDatasourcePayload, tracker: IPipelineTracker) {
     const batchSize = payload.datasource?.limit || 100;
-    const steps = [...prevSteps, this.id];
+    const fields = this.options.fields as IDatasourceFields;
+
+    tracker.steps.push(this.id);
     this.logger.info("DATASOURCE:FILE.EXEC", {
-      steps,
+      tracker: tracker.toObject(),
     });
 
     const pipeline = chain([
@@ -50,24 +55,29 @@ export class FileDatasource extends BaseDatasource {
     ]);
 
     let total = 0;
+    let processedRecords: any[] = [];
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
       total += rows.length;
       const records = rows.map((r) => r.value);
+      processedRecords = [
+        ...processedRecords,
+        ...records.map((r) => _.pick(r, Object.values(fields))),
+      ];
 
       const nextPayload: IPipelinePayload = {
         progress: payload.progress,
         records,
       };
-      this.bus.emit(DatasourceEvents.NEXT, nextPayload, steps);
+      this.bus.emit(DatasourceEvents.NEXT, nextPayload, tracker);
     });
     pipeline.on("end", () => {
       const donePayload: IPipelinePayload = {
         progress: PiplineProgress.END,
-        records: [],
+        records: processedRecords,
         total,
       };
-      this.bus.emit(DatasourceEvents.NEXT, donePayload, steps);
-      this.bus.emit(DatasourceEvents.DONE, donePayload, steps);
+      this.bus.emit(DatasourceEvents.NEXT, donePayload, tracker);
+      this.bus.emit(DatasourceEvents.DONE, donePayload, tracker);
     });
   }
 }

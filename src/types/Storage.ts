@@ -1,6 +1,8 @@
 import { IPipeline, IPipelinePayload } from "./Pipeline";
 
-export interface IStorage extends IPipeline {}
+export interface IStorage extends IPipeline {
+  getInfo(): { id: string; options: IStorageOpts };
+}
 
 export interface IStoragePayload extends IPipelinePayload {
   storage?: {

@@ -6,6 +6,7 @@ import {
   IPipelineOpts,
   IPipelinePayload,
   IPipelineResponse,
+  IPipelineTracker,
 } from "../types";
 
 @injectable()
@@ -17,11 +18,14 @@ export abstract class BasePipeline<O = any> implements IPipeline {
     this.id = options.id;
     this.options = options.opts;
   }
+  public getInfo() {
+    return { id: this.id, options: this.options };
+  }
 
   abstract start(): Promise<void>;
   abstract stop(): Promise<void>;
   abstract exec(
     payload: IPipelinePayload,
-    prevSteps: string[]
+    tracker: IPipelineTracker
   ): Promise<IPipelineResponse>;
 }
