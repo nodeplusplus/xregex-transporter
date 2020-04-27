@@ -47,7 +47,7 @@ export default class Copy extends Command {
     transporter.init({ id: "transporter.main", type: "XTransporter" });
     await transporter.start();
 
-    console.log(await transporter.execOnce({ datasource: { limit: 1 } }));
+    await transporter.execOnce({ datasource: { limit: 100 } });
     await transporter.stop();
   }
 }

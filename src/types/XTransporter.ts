@@ -2,7 +2,7 @@ import * as XLogger from "@nodeplusplus/xregex-logger";
 
 import { IDatasourceOpts, IDatasourcePayload } from "./Datasource";
 import { IStorageOpts } from "./Storage";
-import { IPipeline, IPipelineOpts, IPipelineResponse } from "./Pipeline";
+import { IPipeline, IPipelineOpts, IPipelinePayload } from "./Pipeline";
 
 export interface ISettings {
   datasources: Array<Required<IPipelineOpts<IDatasourceOpts>>>;
@@ -21,10 +21,8 @@ export interface IXTransporter extends IPipeline {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  exec(payload: Partial<IDatasourcePayload>): Promise<IPipelineResponse>;
-  execOnce(
-    payload: Partial<IDatasourcePayload>
-  ): Promise<{ [name: string]: any[] }>;
+  exec(payload: Partial<IDatasourcePayload>): Promise<IPipelinePayload | void>;
+  execOnce(payload: Partial<IDatasourcePayload>): Promise<any>;
 }
 
 export enum TransporterEvents {

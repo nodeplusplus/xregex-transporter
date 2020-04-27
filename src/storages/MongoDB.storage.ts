@@ -7,12 +7,7 @@ import {
 } from "mongodb";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import {
-  IStoragePayload,
-  StorageEvents,
-  PiplineProgress,
-  IPipelineTracker,
-} from "../types";
+import { IStoragePayload, StorageEvents } from "../types";
 import { BaseStorage } from "./Base.storage";
 
 @injectable()
@@ -39,41 +34,35 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
     this.logger.info(`STORAGE:MONGODB.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IStoragePayload, tracker: IPipelineTracker) {
+  public async exec(payload: IStoragePayload) {
     const fields = this.options.fields;
-    tracker.steps.push(this.id);
 
-    if (payload.progress === PiplineProgress.START) {
-      const operators = payload.records.reduce(
-        (o, record) => [
-          ...o,
-          {
-            updateOne: {
-              filter: { id: _.get(record, fields.id) },
-              update: {
-                $set: { ...record, [fields.updatedAt]: new Date() },
-                $setOnInsert: { [fields.createdAt]: new Date() },
-              },
-              upsert: true,
+    const operators: any[] = payload.records.reduce(
+      (o, record) => [
+        ...o,
+        {
+          updateOne: {
+            filter: { id: _.get(record, fields.id) },
+            update: {
+              $set: { ...record, [fields.updatedAt]: new Date() },
+              $setOnInsert: { [fields.createdAt]: new Date() },
             },
+            upsert: true,
           },
-        ],
-        []
-      );
+        },
+      ],
+      []
+    );
 
+    if (operators.length) {
       // See https://docs.mongodb.com/manual/core/bulk-write-operations/#ordered-vs-unordered-operations
-      await this.collection.bulkWrite(operators, {
-        ordered: false,
-      });
-
-      const nextPayload = {
-        progress: payload.progress,
-        records: payload.records.map((r) => _.get(r, fields.id)),
-      };
-      this.bus.emit(StorageEvents.NEXT, nextPayload, tracker);
-    } else {
-      const donePayload = { ...payload, progress: PiplineProgress.END };
-      // this.bus.emit(StorageEvents.DONE, donePayload, tracker);
+      await this.collection.bulkWrite(operators, { ordered: false });
     }
+
+    const nextPayload = {
+      ...payload,
+      records: payload.records.map((r) => _.get(r, fields.id)),
+    };
+    this.bus.emit(StorageEvents.NEXT, nextPayload);
   }
 }

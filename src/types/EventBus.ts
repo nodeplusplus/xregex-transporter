@@ -1,11 +1,7 @@
-import { IPipelinePayload, IPipelineTracker } from "./Pipeline";
+import { IPipelinePayload } from "./Pipeline";
 
 export interface IEventBus<P = IPipelinePayload> {
-  emit(
-    event: string | symbol,
-    payload: any,
-    tracker: IPipelineTracker
-  ): boolean;
+  emit(event: string | symbol, payload: any): boolean;
   on(event: string | symbol, listener: IEventBusListener<P>): this;
   once(event: string | symbol, listener: IEventBusListener<P>): this;
   removeAllListeners(event?: string | symbol): this;
@@ -16,7 +12,7 @@ export interface IEventBus<P = IPipelinePayload> {
 }
 
 export interface IEventBusListener<P> {
-  (payload: P, tracker: IPipelineTracker): void;
+  (payload: P): void;
 }
 
 export interface IEventBusTracker {}

@@ -5,11 +5,10 @@ import {
   IDatasourceOpts,
   DatasourceEvents,
   IDatasourcePayload,
-  IPipelineResponse,
   IPipelineOpts,
   IEventBus,
   TransporterEvents,
-  IPipelineTracker,
+  IPipelinePayload,
 } from "../types";
 
 @injectable()
@@ -34,8 +33,5 @@ export abstract class BaseDatasource<CCO = any> implements IDatasource {
     return { id: this.id, options: this.options };
   }
 
-  abstract exec(
-    payload: IDatasourcePayload,
-    tracker: IPipelineTracker
-  ): Promise<IPipelineResponse>;
+  abstract exec(payload: IDatasourcePayload): Promise<IPipelinePayload | void>;
 }

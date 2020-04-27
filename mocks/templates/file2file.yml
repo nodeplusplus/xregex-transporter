@@ -14,6 +14,19 @@ datasources:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
+  - id: datasource.mongodb
+    type: MongoDBDatasource
+    opts:
+      connection:
+        uri: !ENV [XTRANSPORTER_MONGODB_URI, "mongodb://127.0.0.1:27017"]
+        database: !ENV [XTRANSPORTER_MONGODB_DATABASE, "test"]
+        collection: !ENV [XTRANSPORTER_MONGODB_DATABASE, "datasource"]
+        clientOpts:
+          useUnifiedTopology: true
+      fields:
+        id: "id"
+        createdAt: "createdAt"
+        updatedAt: "updatedAt"
 
 storages:
   - id: storage.file.json
@@ -25,7 +38,7 @@ storages:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
-  - id: mongodb
+  - id: storage.mongodb
     type: MongoDBStorage
     opts:
       connection:

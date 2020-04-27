@@ -32,5 +32,4 @@ export interface IDatasourceFields {
 
 export enum DatasourceEvents {
   NEXT = "dattasource.next",
-  DONE = "dattasource.done",
 }

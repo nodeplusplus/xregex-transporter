@@ -30,5 +30,4 @@ export interface IStorageFields {
 
 export enum StorageEvents {
   NEXT = "storage.next",
-  DONE = "storage.done",
 }

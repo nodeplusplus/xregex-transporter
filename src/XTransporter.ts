@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { injectable, inject } from "inversify";
-import { Record } from "immutable";
 import { nanoid } from "nanoid";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
@@ -17,13 +16,9 @@ import {
   IPipelinePayload,
   PipelineEvents,
   IXTransporter,
-  PiplineProgress,
   IEventBus,
-  IPipelineResponse,
   TransporterEvents,
   StorageEvents,
-  IPipelineTrackerRecord,
-  IPipelineTracker,
 } from "./types";
 
 @injectable()
@@ -68,21 +63,18 @@ export class XTransporter implements IXTransporter {
     this.logger.info("XTRANSPORTER:STOPPED");
   }
 
-  public async execLayers(
-    payload: IPipelinePayload,
-    tracker: IPipelineTracker
-  ) {
-    let nextArgs: IPipelineResponse = [payload, tracker];
+  public async execLayers(payload: IPipelinePayload) {
+    let nextPayload: IPipelinePayload | void = payload;
 
     for (let pipeline of this.pipelines) {
       // Return undefined will break the pipeline
       // and storage process is NOT triggered
-      if (typeof nextArgs === "undefined") break;
+      if (typeof nextPayload === "undefined") break;
 
-      nextArgs = await pipeline.exec(nextArgs[0], nextArgs[1]);
+      nextPayload = await pipeline.exec(nextPayload);
     }
 
-    if (nextArgs) this.bus.emit(PipelineEvents.NEXT, ...nextArgs);
+    if (nextPayload) this.bus.emit(PipelineEvents.NEXT, nextPayload);
   }
 
   public init(options: IPipelineOpts) {
@@ -94,47 +86,27 @@ export class XTransporter implements IXTransporter {
 
   public async exec(payload: Partial<IDatasourcePayload>) {
     const inittPayload: IPipelinePayload = {
-      progress: PiplineProgress.START,
+      id: nanoid(),
       records: [],
       ...payload,
     };
-    const initTracker = new XTranporterTracker({ steps: [this.id] });
 
-    this.logger.info("TRANSPORTER:EXEC", {
-      tracker: initTracker.toObject(),
-    });
-    this.bus.emit(TransporterEvents.NEXT, inittPayload, initTracker);
-
-    return [inittPayload, initTracker] as IPipelineResponse;
+    this.logger.info("TRANSPORTER:EXEC");
+    this.bus.emit(TransporterEvents.NEXT, inittPayload);
   }
 
   public async execOnce(payload: Partial<IDatasourcePayload>) {
-    const [, initTracker] = (await this.exec(payload)) as [
-      IPipelinePayload<any>,
-      IPipelineTracker
-    ];
+    await this.exec(payload);
 
-    const storages: { [name: string]: any[] } = this.storages
-      .map((s) => s.getInfo().id)
-      .reduce((s, id) => ({ ...s, [id]: [] }), {});
-    return new Promise<{ [name: string]: any[] }>((resolve) => {
-      this.bus.once(
-        StorageEvents.DONE,
-        (payload: IPipelinePayload, tracker: IPipelineTracker) => {
-          const storageId = _.last(tracker.steps);
-          if (storageId) storages[storageId] = payload.records;
-
-          const isSameFlow = initTracker.id === tracker.id;
-          const isFulfilled =
-            Object.values(storages).filter((r) => !r.length).length === 0;
-          if (isSameFlow && isFulfilled) return resolve(storages);
-        }
+    return new Promise((resolve) => {
+      this.bus.once(DatasourceEvents.NEXT, (payload) =>
+        console.log(payload, "---datasource")
       );
+      this.bus.once(StorageEvents.NEXT, (payload) =>
+        console.log(payload, "---storage")
+      );
+
+      setTimeout(resolve, 10000);
     });
   }
 }
-
-export const XTranporterTracker = Record<IPipelineTrackerRecord>({
-  id: nanoid(),
-  steps: [],
-});

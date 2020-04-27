@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { nanoid } from "nanoid";
 import { injectable, inject } from "inversify";
 import {
   MongoClient,
@@ -12,8 +13,6 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   IDatasourceFields,
-  PiplineProgress,
-  IPipelineTracker,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -41,10 +40,9 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload, tracker: IPipelineTracker) {
+  public async exec(payload: IDatasourcePayload) {
     const { filter, limit } = { limit: 100, ...payload.datasource };
 
-    tracker.steps.push(this.id);
     const fields = this.options.fields as IDatasourceFields;
 
     const records = await this.collection
@@ -56,18 +54,7 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
       ])
       .toArray();
 
-    const nextPayload: IPipelinePayload = {
-      progress: payload.progress,
-      records,
-    };
-    this.bus.emit(DatasourceEvents.NEXT, nextPayload, tracker);
-
-    const total = await this.collection.countDocuments({ ...filter }, {});
-    const donePayload: IPipelinePayload = {
-      progress: PiplineProgress.END,
-      total,
-      records: records.map((r) => _.pick(r, Object.values(fields))),
-    };
-    this.bus.emit(DatasourceEvents.DONE, donePayload, tracker);
+    const nextPayload: IPipelinePayload = { id: nanoid(), records };
+    this.bus.emit(DatasourceEvents.NEXT, nextPayload);
   }
 }

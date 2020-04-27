@@ -1,5 +1,6 @@
 import fs from "fs";
 import _ from "lodash";
+import { nanoid } from "nanoid";
 import { injectable, inject } from "inversify";
 import { parser } from "stream-json";
 import { chain } from "stream-chain";
@@ -12,9 +13,6 @@ import {
   IDatasourcePayload,
   DatasourceEvents,
   IPipelinePayload,
-  PiplineProgress,
-  IPipelineTracker,
-  IDatasourceFields,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -38,14 +36,10 @@ export class FileDatasource extends BaseDatasource {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload, tracker: IPipelineTracker) {
+  public async exec(payload: IDatasourcePayload) {
     const batchSize = payload.datasource?.limit || 100;
-    const fields = this.options.fields as IDatasourceFields;
 
-    tracker.steps.push(this.id);
-    this.logger.info("DATASOURCE:FILE.EXEC", {
-      tracker: tracker.toObject(),
-    });
+    this.logger.info("DATASOURCE:FILE.EXEC", { id: this.id });
 
     const pipeline = chain([
       this.input,
@@ -54,30 +48,15 @@ export class FileDatasource extends BaseDatasource {
       new Batch({ batchSize }),
     ]);
 
-    let total = 0;
-    let processedRecords: any[] = [];
-    pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
-      total += rows.length;
-      const records = rows.map((r) => r.value);
-      processedRecords = [
-        ...processedRecords,
-        ...records.map((r) => _.pick(r, Object.values(fields))),
-      ];
+    const transactionIds: string[] = [];
 
-      const nextPayload: IPipelinePayload = {
-        progress: payload.progress,
-        records,
-      };
-      this.bus.emit(DatasourceEvents.NEXT, nextPayload, tracker);
+    pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
+      const records = rows.map((r) => r.value);
+
+      const nextPayload: IPipelinePayload = { id: nanoid(), records };
+      transactionIds.push(nextPayload.id);
+      this.bus.emit(DatasourceEvents.NEXT, nextPayload);
     });
-    pipeline.on("end", () => {
-      const donePayload: IPipelinePayload = {
-        progress: PiplineProgress.END,
-        records: processedRecords,
-        total,
-      };
-      this.bus.emit(DatasourceEvents.NEXT, donePayload, tracker);
-      this.bus.emit(DatasourceEvents.DONE, donePayload, tracker);
-    });
+    // pipeline.on("end", () => {});
   }
 }
