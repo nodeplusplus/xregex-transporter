@@ -38,18 +38,16 @@ export class FileStorage extends BaseStorage {
       this.output.write(`${JSON.stringify(record)}\n`)
     );
 
-    this.output.on("finish", () => {
-      if (payload.progress === PiplineProgress.START) {
-        return this.bus.emit(
-          StorageEvents.NEXT,
-          {
-            progress: payload.progress,
-            records,
-          },
-          steps
-        );
-      }
-
+    if (payload.progress === PiplineProgress.START) {
+      this.bus.emit(
+        StorageEvents.NEXT,
+        {
+          progress: payload.progress,
+          records,
+        },
+        steps
+      );
+    } else {
       this.bus.emit(
         StorageEvents.DONE,
         {
@@ -58,6 +56,6 @@ export class FileStorage extends BaseStorage {
         },
         steps
       );
-    });
+    }
   }
 }

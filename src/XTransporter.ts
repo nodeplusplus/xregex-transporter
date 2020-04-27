@@ -19,6 +19,7 @@ import {
   IEventBus,
   IPipelineResponse,
   TransporterEvents,
+  StorageEvents,
 } from "./types";
 
 @injectable()
@@ -91,5 +92,15 @@ export class XTransporter implements IXTransporter {
       steps: [this.id],
     });
     this.bus.emit(TransporterEvents.NEXT, inittPayload, [this.id]);
+  }
+
+  public async execOnce(payload: Partial<IDatasourcePayload>) {
+    const promise = new Promise<IPipelineResponse>((resolve) => {
+      this.bus.once(StorageEvents.DONE, (...response) => resolve(response));
+    });
+
+    await this.exec(payload);
+
+    return promise;
   }
 }

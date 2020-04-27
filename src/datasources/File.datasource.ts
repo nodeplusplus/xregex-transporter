@@ -38,7 +38,7 @@ export class FileDatasource extends BaseDatasource {
   public async exec(payload: IDatasourcePayload, prevSteps: string[]) {
     const batchSize = payload.datasource?.limit || 100;
     const steps = [...prevSteps, this.id];
-    this.logger.info("TRANSPORTER:EXEC", {
+    this.logger.info("DATASOURCE:FILE.EXEC", {
       steps,
     });
 

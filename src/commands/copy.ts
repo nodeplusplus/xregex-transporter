@@ -44,10 +44,11 @@ export default class Copy extends Command {
     builder.useTemplate(template);
     builder.make();
     const transporter = builder.getTransporter();
-    transporter.init({ id: "transporter.copy", type: "XTransporter" });
+    transporter.init({ id: "transporter.main", type: "XTransporter" });
     await transporter.start();
 
-    transporter.exec({ datasource: { limit: 1 } });
+    console.log(await transporter.execOnce({ datasource: { limit: 1 } }));
+    await transporter.stop();
   }
 }
 
