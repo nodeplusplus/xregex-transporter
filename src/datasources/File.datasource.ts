@@ -13,6 +13,7 @@ import {
   IDatasourcePayload,
   DatasourceEvents,
   IPipelinePayload,
+  IPipelineTransaction,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -48,15 +49,20 @@ export class FileDatasource extends BaseDatasource {
       new Batch({ batchSize }),
     ]);
 
-    const transactionIds: string[] = [];
-
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
       const records = rows.map((r) => r.value);
+      const transaction: IPipelineTransaction = {
+        id: nanoid(),
+        steps: [this.id],
+      };
 
-      const nextPayload: IPipelinePayload = { id: nanoid(), records };
-      transactionIds.push(nextPayload.id);
+      const nextPayload: IPipelinePayload = { transaction, records };
       this.bus.emit(DatasourceEvents.NEXT, nextPayload);
     });
-    // pipeline.on("end", () => {});
+    pipeline.on("end", () => {
+      // Trigger done event to allow other component compare results
+      const donePayload: IPipelinePayload = { records: [] };
+      this.bus.emit(DatasourceEvents.DONE, donePayload);
+    });
   }
 }

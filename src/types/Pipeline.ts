@@ -9,9 +9,13 @@ export interface IPipeline {
 }
 
 export interface IPipelinePayload<R = any> {
-  id: string;
   records: R[];
-  total?: number;
+  transaction?: IPipelineTransaction;
+}
+
+export interface IPipelineTransaction {
+  id: string;
+  steps: string[];
 }
 
 export interface IPipelineOpts<O = any> {

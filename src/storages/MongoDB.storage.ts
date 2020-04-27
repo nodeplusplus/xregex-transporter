@@ -34,7 +34,7 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
     this.logger.info(`STORAGE:MONGODB.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IStoragePayload) {
+  public async exec(payload: Required<IStoragePayload>) {
     const fields = this.options.fields;
 
     const operators: any[] = payload.records.reduce(
@@ -61,6 +61,10 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
 
     const nextPayload = {
       ...payload,
+      transaction: {
+        id: payload.transaction.id,
+        steps: [...payload.transaction.steps, this.id],
+      },
       records: payload.records.map((r) => _.get(r, fields.id)),
     };
     this.bus.emit(StorageEvents.NEXT, nextPayload);

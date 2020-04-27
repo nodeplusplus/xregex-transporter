@@ -13,6 +13,7 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   IDatasourceFields,
+  IPipelineTransaction,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -54,7 +55,15 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
       ])
       .toArray();
 
-    const nextPayload: IPipelinePayload = { id: nanoid(), records };
+    const transaction: IPipelineTransaction = {
+      id: nanoid(),
+      steps: [this.id],
+    };
+    const nextPayload: IPipelinePayload = { transaction, records };
     this.bus.emit(DatasourceEvents.NEXT, nextPayload);
+
+    // Trigger done event to allow other component compare results
+    const donePayload: IPipelinePayload = { records: [] };
+    this.bus.emit(DatasourceEvents.DONE, donePayload);
   }
 }

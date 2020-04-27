@@ -28,7 +28,7 @@ export class FileStorage extends BaseStorage {
     this.logger.info(`STORAGE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IStoragePayload) {
+  public async exec(payload: Required<IStoragePayload>) {
     const fields = this.options.fields;
 
     if (payload.records.length) {
@@ -39,6 +39,10 @@ export class FileStorage extends BaseStorage {
 
     const nextPayload: IStoragePayload = {
       ...payload,
+      transaction: {
+        id: payload.transaction.id,
+        steps: [...payload.transaction.steps, this.id],
+      },
       records: payload.records.map((r) => _.get(r, fields.id)),
     };
     this.bus.emit(StorageEvents.NEXT, nextPayload);

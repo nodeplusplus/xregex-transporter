@@ -12,7 +12,7 @@ export interface IEventBus<P = IPipelinePayload> {
 }
 
 export interface IEventBusListener<P> {
-  (payload: P): void;
+  (payload: Required<P>): void;
 }
 
 export interface IEventBusTracker {}

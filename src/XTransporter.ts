@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { injectable, inject } from "inversify";
-import { nanoid } from "nanoid";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
@@ -19,6 +18,7 @@ import {
   IEventBus,
   TransporterEvents,
   StorageEvents,
+  IPipelineTransaction,
 } from "./types";
 
 @injectable()
@@ -85,13 +85,9 @@ export class XTransporter implements IXTransporter {
   }
 
   public async exec(payload: Partial<IDatasourcePayload>) {
-    const inittPayload: IPipelinePayload = {
-      id: nanoid(),
-      records: [],
-      ...payload,
-    };
-
     this.logger.info("TRANSPORTER:EXEC");
+
+    const inittPayload: IPipelinePayload = { records: [], ...payload };
     this.bus.emit(TransporterEvents.NEXT, inittPayload);
   }
 
@@ -99,14 +95,45 @@ export class XTransporter implements IXTransporter {
     await this.exec(payload);
 
     return new Promise((resolve) => {
-      this.bus.once(DatasourceEvents.NEXT, (payload) =>
-        console.log(payload, "---datasource")
-      );
-      this.bus.once(StorageEvents.NEXT, (payload) =>
-        console.log(payload, "---storage")
-      );
+      const datasourceTransactionIds: string[] = [];
+      const storageTransactionIds: string[] = [];
 
-      setTimeout(resolve, 10000);
+      const storageIds = this.storages.map((s) => s.getInfo().id);
+
+      // @TODO: Race condition here with 2 event listener
+      this.bus.on(DatasourceEvents.NEXT, (payload) => {
+        for (let storageId of storageIds) {
+          datasourceTransactionIds.push(
+            [
+              payload.transaction.id,
+              ...payload.transaction.steps,
+              storageId,
+            ].join("/")
+          );
+        }
+        done();
+      });
+      this.bus.on(StorageEvents.NEXT, (payload) => {
+        storageTransactionIds.push(
+          [payload.transaction.id, ...payload.transaction.steps].join("/")
+        );
+        done();
+      });
+
+      function done() {
+        if (datasourceTransactionIds.length !== storageTransactionIds.length) {
+          return;
+        }
+
+        if (
+          _.difference(datasourceTransactionIds, storageTransactionIds)
+            .length !== 0
+        ) {
+          return;
+        }
+
+        return resolve();
+      }
     });
   }
 }

@@ -1,12 +1,7 @@
 import { EventEmitter } from "events";
 import { injectable } from "inversify";
 
-import {
-  IEventBus,
-  IEventBusListener,
-  IPipelinePayload,
-  IPipelineTracker,
-} from "../types";
+import { IEventBus, IEventBusListener, IPipelinePayload } from "../types";
 
 @injectable()
 export class LocalBus<P = IPipelinePayload> implements IEventBus<P> {
@@ -16,12 +11,8 @@ export class LocalBus<P = IPipelinePayload> implements IEventBus<P> {
     this.emitter = new EventEmitter();
   }
 
-  emit(
-    event: string | symbol,
-    payload: IPipelinePayload,
-    tracker: IPipelineTracker
-  ): boolean {
-    this.emitter.emit(event, payload, tracker);
+  emit(event: string | symbol, payload: IPipelinePayload): boolean {
+    this.emitter.emit(event, payload);
     return true;
   }
 
@@ -31,7 +22,7 @@ export class LocalBus<P = IPipelinePayload> implements IEventBus<P> {
   }
 
   once(event: string | symbol, listener: IEventBusListener<P>) {
-    this.emitter.on(event, listener);
+    this.emitter.once(event, listener);
     return this;
   }
 

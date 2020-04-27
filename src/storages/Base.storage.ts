@@ -8,6 +8,7 @@ import {
   IPipelinePayload,
   IPipelineOpts,
   IEventBus,
+  IStoragePayload,
 } from "../types";
 
 @injectable()
@@ -32,5 +33,5 @@ export abstract class BaseStorage<CCO = any> implements IStorage {
     return { id: this.id, options: this.options };
   }
 
-  abstract exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;
+  abstract exec(payload: IStoragePayload): Promise<IPipelinePayload | void>;
 }
