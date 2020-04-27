@@ -1,4 +1,3 @@
-import { EventEmitter } from "events";
 import { interfaces, Container } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 

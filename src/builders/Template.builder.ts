@@ -16,7 +16,7 @@ import {
   IStorageOpts,
 } from "../types";
 import { FileDatasource, MongoDBDatasource } from "../datasources";
-import { FileStorage } from "../storages";
+import { FileStorage, MongoDBStorage } from "../storages";
 import {
   PassthroughPipeline,
   ParserPipeline,
@@ -61,6 +61,10 @@ export class TemplateBuilder extends BaseBuilder {
     for (let storage of storages) {
       if (storage.type === FileStorage.name) {
         this.addStorage(FileStorage);
+        continue;
+      }
+      if (storage.type === MongoDBStorage.name) {
+        this.addStorage(MongoDBStorage);
         continue;
       }
       throw new Error(`Storage ${storage.type} is not supported!`);
