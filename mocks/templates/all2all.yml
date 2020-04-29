@@ -32,7 +32,7 @@ datasources:
     opts:
       connection:
         uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
-        database: !ENV [XTRANSPORTER_ES_DATABASE, "test*"]
+        database: !ENV [XTRANSPORTER_ES_DATABASE, "datasource_*"]
       fields:
         id: "id"
         createdAt: "createdAt"
@@ -66,7 +66,7 @@ storages:
     opts:
       connection:
         uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
-        database: !ENV [XTRANSPORTER_ES_DATABASE, "test"]
+        database: !ENV [XTRANSPORTER_ES_DATABASE, "storage"]
         collection: !ENV [XTRANSPORTER_ES_COLLECTION, "publishedAt,YYYYMMDD"]
       fields:
         id: "id"
