@@ -30,6 +30,7 @@ export class Progress implements IProgress {
   }
 
   public async done() {
+    // @TODO: Solve race condition of 2 events
     return new Promise((resolve, reject) => {
       const storageIds = this.settings.storages.map((s) => s.id);
 
