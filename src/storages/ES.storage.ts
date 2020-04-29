@@ -1,21 +1,26 @@
 import _ from "lodash";
+import moment from "moment";
 import { injectable, inject } from "inversify";
 import {
   Client as ESClient,
   ClientOptions as ESClientOptions,
+  RequestParams,
 } from "@elastic/elasticsearch";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
-  IStoragePayload,
+  IStorageContext,
   StorageEvents,
   IProgressRecord,
-  IPipelinePayload,
+  IPipelineContext,
 } from "../types";
 import { BaseStorage } from "./Base.storage";
 
 @injectable()
-export class ESStorage extends BaseStorage<ESClientOptions> {
+export class ESStorage extends BaseStorage<
+  ESClientOptions,
+  RequestParams.Bulk
+> {
   @inject("LOGGER") private logger!: ILogger;
 
   private client!: ESClient;
@@ -38,36 +43,52 @@ export class ESStorage extends BaseStorage<ESClientOptions> {
     this.logger.info(`STORAGE:MONGODB.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: Required<IStoragePayload>) {
+  public async exec(ctx: Required<IStorageContext>) {
     const fields = this.options.fields;
-    const database = this.options.connection.database as string;
 
-    const operators: any[] = payload.records.reduce(
-      (o, record) => [
-        ...o,
-        {
-          update: { _id: _.get(record, fields.id), _index: database },
-        },
-        {
-          doc: {
-            ...record,
-            [fields.updatedAt]: new Date(),
-          },
-          doc_as_upsert: true,
-        },
-      ],
-      []
-    );
-
+    const operators = this.createBulkRequest(ctx.records);
     if (operators.length) {
-      await this.client.bulk({ body: operators });
+      await this.client.bulk({ body: operators, ...this.options.execOpts });
     }
 
-    const progress: IProgressRecord = { ...payload.progress, storage: this.id };
-    const nextPayload: IPipelinePayload = {
+    const progress: IProgressRecord = { ...ctx.progress, storage: this.id };
+    const nextCtx: IPipelineContext = {
       progress,
-      records: payload.records.map((r) => _.get(r, fields.id)),
+      records: ctx.records.map((r) => _.get(r, fields.id)),
     };
-    this.bus.emit(StorageEvents.NEXT, nextPayload);
+    this.bus.emit(StorageEvents.NEXT, nextCtx);
+  }
+
+  private createBulkRequest(records?: any[]): any[] {
+    if (!Array.isArray(records) || !records.length) return [];
+
+    const database = this.options.connection.database || "es";
+    const [timestampField, format = "YYYYMMDD"] = (this.options.connection
+      .collection as string).split(",") as [string?, string?];
+
+    const fields = this.options.fields;
+    const body: any[] = [];
+
+    for (let record of records) {
+      // Only update record with valid id
+      const id = _.get(record, fields.id);
+      if (!id) continue;
+
+      const timestamp =
+        timestampField && (_.get(record, timestampField) as string);
+      if (!timestamp || !moment(timestamp).isValid()) continue;
+
+      const index = [database, moment(timestamp).format(format)].join("_");
+
+      // Filter
+      body.push({ update: { _id: id, _index: index } });
+      // Update
+      body.push({
+        doc: { ...record, [fields.updatedAt]: new Date() },
+        doc_as_upsert: true,
+      });
+    }
+
+    return body;
   }
 }

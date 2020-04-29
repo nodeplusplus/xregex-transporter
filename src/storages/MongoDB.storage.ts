@@ -8,10 +8,10 @@ import {
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
-  IStoragePayload,
+  IStorageContext,
   StorageEvents,
   IProgressRecord,
-  IPipelinePayload,
+  IPipelineContext,
 } from "../types";
 import { BaseStorage } from "./Base.storage";
 
@@ -39,10 +39,10 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
     this.logger.info(`STORAGE:MONGODB.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: Required<IStoragePayload>) {
+  public async exec(ctx: Required<IStorageContext>) {
     const fields = this.options.fields;
 
-    const operators: any[] = payload.records.reduce(
+    const operators: any[] = ctx.records.reduce(
       (o, record) => [
         ...o,
         {
@@ -64,11 +64,11 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
       await this.collection.bulkWrite(operators, { ordered: false });
     }
 
-    const progress: IProgressRecord = { ...payload.progress, storage: this.id };
-    const nextPayload: IPipelinePayload = {
+    const progress: IProgressRecord = { ...ctx.progress, storage: this.id };
+    const nextCtx: IPipelineContext = {
       progress,
-      records: payload.records.map((r) => _.get(r, fields.id)),
+      records: ctx.records.map((r) => _.get(r, fields.id)),
     };
-    this.bus.emit(StorageEvents.NEXT, nextPayload);
+    this.bus.emit(StorageEvents.NEXT, nextCtx);
   }
 }

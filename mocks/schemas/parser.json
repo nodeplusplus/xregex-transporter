@@ -1,5 +1,6 @@
 {
   "_scope": [{ "selector": "$root" }],
   "id": [{ "selector": "id" }],
-  "comments": [{ "selector": "comments" }]
+  "comments": [{ "selector": "comments" }],
+  "publishedAt": [{ "selector": "publishedAt" }]
 }

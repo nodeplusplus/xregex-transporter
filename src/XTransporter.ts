@@ -7,12 +7,12 @@ import {
   IDatasource,
   IStorage,
   IPipeline,
-  IDatasourcePayload,
+  IDatasourceContext,
   DatasourceEvents,
   IDatasourceOpts,
   IStorageOpts,
   IPipelineOpts,
-  IPipelinePayload,
+  IPipelineContext,
   PipelineEvents,
   IXTransporter,
   IEventBus,
@@ -63,18 +63,18 @@ export class XTransporter implements IXTransporter {
     this.logger.info("XTRANSPORTER:STOPPED");
   }
 
-  public async execLayers(payload: IPipelinePayload) {
-    let nextPayload: IPipelinePayload | void = payload;
+  public async execLayers(ctx: IPipelineContext) {
+    let nextCtx: IPipelineContext | void = ctx;
 
     for (let pipeline of this.pipelines) {
       // Return undefined will break the pipeline
       // and storage process is NOT triggered
-      if (typeof nextPayload === "undefined") break;
+      if (typeof nextCtx === "undefined") break;
 
-      nextPayload = await pipeline.exec(nextPayload);
+      nextCtx = await pipeline.exec(nextCtx);
     }
 
-    if (nextPayload) this.bus.emit(PipelineEvents.NEXT, nextPayload);
+    if (nextCtx) this.bus.emit(PipelineEvents.NEXT, nextCtx);
   }
 
   public init(options: IPipelineOpts) {
@@ -84,15 +84,15 @@ export class XTransporter implements IXTransporter {
     return { id: this.id, options: null };
   }
 
-  public async exec(payload: Partial<IDatasourcePayload>) {
+  public async exec(ctx: Partial<IDatasourceContext>) {
     this.logger.info("TRANSPORTER:EXEC");
 
-    const inittPayload: IPipelinePayload = { records: [], ...payload };
-    this.bus.emit(TransporterEvents.NEXT, inittPayload);
+    const initCtx: IPipelineContext = { records: [], ...ctx };
+    this.bus.emit(TransporterEvents.NEXT, initCtx);
   }
 
-  public async execOnce(payload: Partial<IDatasourcePayload>) {
-    await this.exec(payload);
+  public async execOnce(ctx: Partial<IDatasourceContext>) {
+    await this.exec(ctx);
     await this.progress.done();
   }
 }

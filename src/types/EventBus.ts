@@ -1,7 +1,7 @@
-import { IPipelinePayload } from "./Pipeline";
+import { IPipelineContext } from "./Pipeline";
 
-export interface IEventBus<P = IPipelinePayload> {
-  emit(event: string | symbol, payload: any): boolean;
+export interface IEventBus<P = IPipelineContext> {
+  emit(event: string | symbol, ctx: any): boolean;
   on(event: string | symbol, listener: IEventBusListener<P>): this;
   once(event: string | symbol, listener: IEventBusListener<P>): this;
   removeAllListeners(event?: string | symbol): this;
@@ -12,7 +12,7 @@ export interface IEventBus<P = IPipelinePayload> {
 }
 
 export interface IEventBusListener<P> {
-  (payload: Required<P>): void;
+  (ctx: Required<P>): void;
 }
 
 export interface IEventBusTracker {}

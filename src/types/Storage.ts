@@ -1,16 +1,13 @@
-import { IPipeline, IPipelinePayload } from "./Pipeline";
+import { IPipeline, IPipelineContext } from "./Pipeline";
 
 export interface IStorage extends IPipeline {}
 
-export interface IStoragePayload extends IPipelinePayload {
-  storage?: {
-    upsert?: boolean;
-  };
-}
+export interface IStorageContext extends IPipelineContext {}
 
-export interface IStorageOpts<CCO = any> {
+export interface IStorageOpts<CCO = any, EO = any> {
   connection: IStorageConnection<CCO>;
   fields: IStorageFields;
+  execOpts?: EO;
 }
 
 export interface IStorageConnection<CO = any> {

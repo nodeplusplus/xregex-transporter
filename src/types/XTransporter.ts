@@ -1,8 +1,8 @@
 import * as XLogger from "@nodeplusplus/xregex-logger";
 
-import { IDatasourceOpts, IDatasourcePayload } from "./Datasource";
+import { IDatasourceOpts, IDatasourceContext } from "./Datasource";
 import { IStorageOpts } from "./Storage";
-import { IPipeline, IPipelineOpts, IPipelinePayload } from "./Pipeline";
+import { IPipeline, IPipelineOpts, IPipelineContext } from "./Pipeline";
 
 export interface ISettings {
   datasources: Array<Required<IPipelineOpts<IDatasourceOpts>>>;
@@ -21,8 +21,8 @@ export interface IXTransporter extends IPipeline {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  exec(payload: Partial<IDatasourcePayload>): Promise<IPipelinePayload | void>;
-  execOnce(payload: Partial<IDatasourcePayload>): Promise<any>;
+  exec(ctx: Partial<IDatasourceContext>): Promise<IPipelineContext | void>;
+  execOnce(ctx: Partial<IDatasourceContext>): Promise<any>;
 }
 
 export enum TransporterEvents {

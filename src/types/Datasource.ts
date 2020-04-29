@@ -1,14 +1,8 @@
-import { IPipeline, IPipelinePayload } from "./Pipeline";
+import { IPipeline, IPipelineContext } from "./Pipeline";
 
 export interface IDatasource extends IPipeline {}
 
-export interface IDatasourcePayload extends IPipelinePayload {
-  datasource: {
-    ids?: string[];
-    filter?: any;
-    limit?: number;
-  };
-}
+export interface IDatasourceContext extends IPipelineContext {}
 
 export interface IDatasourceOpts<CCO = any> {
   connection: IDatasourceConnection<CCO>;

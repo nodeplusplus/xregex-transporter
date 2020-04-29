@@ -4,10 +4,10 @@ import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
-  IStoragePayload,
+  IStorageContext,
   StorageEvents,
   IProgressRecord,
-  IPipelinePayload,
+  IPipelineContext,
 } from "../types";
 import { BaseStorage } from "./Base.storage";
 import * as helpers from "../helpers";
@@ -33,20 +33,20 @@ export class FileStorage extends BaseStorage {
     this.logger.info(`STORAGE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: Required<IStoragePayload>) {
+  public async exec(ctx: Required<IStorageContext>) {
     const fields = this.options.fields;
 
-    if (payload.records.length) {
-      payload.records.forEach((record) =>
+    if (ctx.records.length) {
+      ctx.records.forEach((record) =>
         this.output.write(`${JSON.stringify(record)}\n`)
       );
     }
 
-    const progress: IProgressRecord = { ...payload.progress, storage: this.id };
-    const nextPayload: IPipelinePayload = {
+    const progress: IProgressRecord = { ...ctx.progress, storage: this.id };
+    const nextCtx: IPipelineContext = {
       progress,
-      records: payload.records.map((r) => _.get(r, fields.id)),
+      records: ctx.records.map((r) => _.get(r, fields.id)),
     };
-    this.bus.emit(StorageEvents.NEXT, nextPayload);
+    this.bus.emit(StorageEvents.NEXT, nextCtx);
   }
 }

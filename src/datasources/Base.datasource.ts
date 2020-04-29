@@ -4,16 +4,16 @@ import {
   IDatasource,
   IDatasourceOpts,
   DatasourceEvents,
-  IDatasourcePayload,
+  IDatasourceContext,
   IPipelineOpts,
   IEventBus,
   TransporterEvents,
-  IPipelinePayload,
+  IPipelineContext,
 } from "../types";
 
 @injectable()
 export abstract class BaseDatasource<CCO = any> implements IDatasource {
-  @inject("BUS") protected bus!: IEventBus<IDatasourcePayload>;
+  @inject("BUS") protected bus!: IEventBus<IDatasourceContext>;
 
   protected id!: string;
   protected options!: IDatasourceOpts<CCO>;
@@ -30,5 +30,5 @@ export abstract class BaseDatasource<CCO = any> implements IDatasource {
     this.options = options.opts;
   }
 
-  abstract exec(payload: IDatasourcePayload): Promise<IPipelinePayload | void>;
+  abstract exec(ctx: IDatasourceContext): Promise<IPipelineContext | void>;
 }

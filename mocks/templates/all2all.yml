@@ -2,7 +2,7 @@ logger:
   type: console
   opts:
     level: info
-    name: test/file2file
+    name: test/all2all
 
 datasources:
   - id: datasource.file.json
@@ -67,10 +67,13 @@ storages:
       connection:
         uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
         database: !ENV [XTRANSPORTER_ES_DATABASE, "test"]
+        collection: !ENV [XTRANSPORTER_ES_COLLECTION, "publishedAt,YYYYMMDD"]
       fields:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
+      execOpts:
+        refresh: "true"
 
 pipelines:
   - id: parser.builtin

@@ -7,7 +7,7 @@ import {
   DatasourceEvents,
   ISettings,
   StorageEvents,
-  IPipelinePayload,
+  IPipelineContext,
 } from "./types";
 
 import { IEventBus } from "./types";
@@ -31,19 +31,17 @@ export class Progress implements IProgress {
 
   public async done() {
     // @TODO: Solve race condition of 2 events
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const storageIds = this.settings.storages.map((s) => s.id);
 
-      this.bus.on(DatasourceEvents.NEXT, (payload: IPipelinePayload) => {
-        storageIds.map((storage) =>
-          this.from({ ...payload.progress, storage })
-        );
+      this.bus.on(DatasourceEvents.NEXT, (ctx: Required<IPipelineContext>) => {
+        storageIds.map((storage) => this.from({ ...ctx.progress, storage }));
 
         if (this.isDone()) return resolve();
       });
 
-      this.bus.on(StorageEvents.NEXT, (payload: IPipelinePayload) => {
-        this.to(payload.progress);
+      this.bus.on(StorageEvents.NEXT, (ctx: Required<IPipelineContext>) => {
+        this.to(ctx.progress);
 
         if (this.isDone()) return resolve();
       });

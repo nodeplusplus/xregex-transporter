@@ -4,14 +4,14 @@ export interface IPipeline {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  exec(payload: IPipelinePayload): Promise<IPipelinePayload | void>;
+  exec(ctx: IPipelineContext): Promise<IPipelineContext | void>;
 
   init(options: IPipelineOpts): void;
 }
 
-export interface IPipelinePayload<R = any> {
+export interface IPipelineContext<R = any> {
   records: R[];
-  progress: IProgressRecord;
+  progress?: IProgressRecord;
 }
 
 export interface IPipelineOpts<O = any> {

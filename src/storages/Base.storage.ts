@@ -5,18 +5,17 @@ import {
   IStorage,
   IStorageOpts,
   PipelineEvents,
-  IPipelinePayload,
   IPipelineOpts,
   IEventBus,
-  IStoragePayload,
+  IPipelineContext,
 } from "../types";
 
 @injectable()
-export abstract class BaseStorage<CCO = any> implements IStorage {
+export abstract class BaseStorage<CCO = any, EO = any> implements IStorage {
   @inject("BUS") protected bus!: IEventBus;
 
   protected id!: string;
-  protected options!: IStorageOpts<CCO>;
+  protected options!: IStorageOpts<CCO, EO>;
 
   public async start() {
     this.bus.on(PipelineEvents.NEXT, this.exec.bind(this));
@@ -29,5 +28,5 @@ export abstract class BaseStorage<CCO = any> implements IStorage {
     this.id = options.id;
     this.options = options.opts;
   }
-  abstract exec(payload: IStoragePayload): Promise<IPipelinePayload | void>;
+  abstract exec(ctx: IPipelineContext): Promise<IPipelineContext | void>;
 }

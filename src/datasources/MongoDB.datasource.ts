@@ -9,9 +9,9 @@ import {
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
-  IDatasourcePayload,
+  IDatasourceContext,
   DatasourceEvents,
-  IPipelinePayload,
+  IPipelineContext,
   IDatasourceFields,
   IProgressRecord,
 } from "../types";
@@ -41,8 +41,8 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload) {
-    const { filter, limit } = { limit: 100, ...payload.datasource };
+  public async exec(ctx: IDatasourceContext) {
+    const { limit, filter } = { limit: 100, ...this.options.query };
 
     const fields = this.options.fields as IDatasourceFields;
 
@@ -56,7 +56,7 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
       .toArray();
 
     const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
-    const nextPayload: IPipelinePayload = { records, progress };
-    this.bus.emit(DatasourceEvents.NEXT, nextPayload);
+    const nextCtx: IPipelineContext = { records, progress };
+    this.bus.emit(DatasourceEvents.NEXT, nextCtx);
   }
 }

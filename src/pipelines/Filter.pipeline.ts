@@ -2,7 +2,7 @@ import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 import { IXFilter, IXFilterExecOpts } from "@nodeplusplus/xregex-filter";
 
-import { IPipelinePayload } from "../types";
+import { IPipelineContext } from "../types";
 import { BasePipeline } from "./Base.pipeline";
 
 @injectable()
@@ -19,8 +19,8 @@ export class FilterPipeline extends BasePipeline<IXFilterExecOpts> {
     this.logger.info(`PIPELINE:PARSER.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IPipelinePayload) {
-    const records = await this.filter.exec(payload.records, this.options);
-    return { ...payload, records };
+  public async exec(ctx: IPipelineContext) {
+    const records = await this.filter.exec(ctx.records, this.options);
+    return { ...ctx, records };
   }
 }

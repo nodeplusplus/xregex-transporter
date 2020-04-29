@@ -10,9 +10,9 @@ const Batch = require("stream-json/utils/Batch");
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
 import {
-  IDatasourcePayload,
+  IDatasourceContext,
   DatasourceEvents,
-  IPipelinePayload,
+  IPipelineContext,
   IProgressRecord,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
@@ -37,22 +37,22 @@ export class FileDatasource extends BaseDatasource {
     this.logger.info(`DATASOURCE:FILE.STOPPED`, { id: this.id });
   }
 
-  public async exec(payload: IDatasourcePayload) {
-    const batchSize = payload.datasource?.limit || 100;
+  public async exec(ctx: IDatasourceContext) {
+    const { limit } = { limit: 100, ...this.options.query };
 
     const pipeline = chain([
       this.input,
       parser({ jsonStreaming: true }),
       new StreamValues(),
-      new Batch({ batchSize }),
+      new Batch({ batchSize: limit }),
     ]);
 
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
       const records = rows.map((r) => r.value);
 
       const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
-      const nextPayload: IPipelinePayload = { records, progress };
-      this.bus.emit(DatasourceEvents.NEXT, nextPayload);
+      const nextCtx: IPipelineContext = { records, progress };
+      this.bus.emit(DatasourceEvents.NEXT, nextCtx);
     });
   }
 }
