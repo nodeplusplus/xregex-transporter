@@ -11,8 +11,10 @@ import {
   IDatasourceOpts,
   IStorageOpts,
   IEventBus,
+  IProgress,
 } from "../types";
 import { XTransporter } from "../XTransporter";
+import { Progress } from "../Progress";
 
 export class BaseBuilder {
   protected container!: Container;
@@ -20,11 +22,16 @@ export class BaseBuilder {
 
   constructor() {
     this.reset();
+    this.setProgress();
     this.registerFactory();
   }
 
   public setBus(bus: interfaces.Newable<IEventBus>) {
     this.container.bind<IEventBus>("BUS").to(bus).inSingletonScope();
+  }
+
+  public setProgress() {
+    this.container.bind<IProgress>("PROGRESS").to(Progress).inSingletonScope();
   }
 
   public reset() {

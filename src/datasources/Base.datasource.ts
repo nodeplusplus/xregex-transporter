@@ -29,9 +29,6 @@ export abstract class BaseDatasource<CCO = any> implements IDatasource {
     this.id = options.id;
     this.options = options.opts;
   }
-  public getInfo() {
-    return { id: this.id, options: this.options };
-  }
 
   abstract exec(payload: IDatasourcePayload): Promise<IPipelinePayload | void>;
 }

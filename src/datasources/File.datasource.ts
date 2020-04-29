@@ -13,7 +13,7 @@ import {
   IDatasourcePayload,
   DatasourceEvents,
   IPipelinePayload,
-  IPipelineTransaction,
+  IProgressRecord,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -40,8 +40,6 @@ export class FileDatasource extends BaseDatasource {
   public async exec(payload: IDatasourcePayload) {
     const batchSize = payload.datasource?.limit || 100;
 
-    this.logger.info("DATASOURCE:FILE.EXEC", { id: this.id });
-
     const pipeline = chain([
       this.input,
       parser({ jsonStreaming: true }),
@@ -51,12 +49,9 @@ export class FileDatasource extends BaseDatasource {
 
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
       const records = rows.map((r) => r.value);
-      const transaction: IPipelineTransaction = {
-        id: nanoid(),
-        steps: [this.id],
-      };
 
-      const nextPayload: IPipelinePayload = { transaction, records };
+      const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
+      const nextPayload: IPipelinePayload = { records, progress };
       this.bus.emit(DatasourceEvents.NEXT, nextPayload);
     });
   }

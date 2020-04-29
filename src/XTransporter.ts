@@ -17,14 +17,14 @@ import {
   IXTransporter,
   IEventBus,
   TransporterEvents,
-  StorageEvents,
-  IPipelineTransaction,
+  IProgress,
 } from "./types";
 
 @injectable()
 export class XTransporter implements IXTransporter {
   @inject("LOGGER") private logger!: ILogger;
   @inject("BUS") private bus!: IEventBus;
+  @inject("PROGRESS") private progress!: IProgress;
 
   private id!: string;
 
@@ -93,46 +93,6 @@ export class XTransporter implements IXTransporter {
 
   public async execOnce(payload: Partial<IDatasourcePayload>) {
     await this.exec(payload);
-
-    return new Promise((resolve) => {
-      const datasourceTransactionIds: string[] = [];
-      const storageTransactionIds: string[] = [];
-
-      const storageIds = this.storages.map((s) => s.getInfo().id);
-
-      // @TODO: Solve rare condition here with 2 event listener
-      this.bus.on(DatasourceEvents.NEXT, (payload) => {
-        for (let storageId of storageIds) {
-          datasourceTransactionIds.push(
-            [
-              payload.transaction.id,
-              ...payload.transaction.steps,
-              storageId,
-            ].join("/")
-          );
-        }
-      });
-      this.bus.on(StorageEvents.NEXT, (payload) => {
-        storageTransactionIds.push(
-          [payload.transaction.id, ...payload.transaction.steps].join("/")
-        );
-        done();
-      });
-
-      function done() {
-        if (datasourceTransactionIds.length !== storageTransactionIds.length) {
-          return;
-        }
-
-        if (
-          _.difference(datasourceTransactionIds, storageTransactionIds)
-            .length !== 0
-        ) {
-          return;
-        }
-
-        return resolve();
-      }
-    });
+    await this.progress.done();
   }
 }

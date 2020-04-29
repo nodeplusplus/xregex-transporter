@@ -13,7 +13,7 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   IDatasourceFields,
-  IPipelineTransaction,
+  IProgressRecord,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -55,11 +55,8 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
       ])
       .toArray();
 
-    const transaction: IPipelineTransaction = {
-      id: nanoid(),
-      steps: [this.id],
-    };
-    const nextPayload: IPipelinePayload = { transaction, records };
+    const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
+    const nextPayload: IPipelinePayload = { records, progress };
     this.bus.emit(DatasourceEvents.NEXT, nextPayload);
   }
 }

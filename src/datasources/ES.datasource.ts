@@ -13,7 +13,7 @@ import {
   DatasourceEvents,
   IPipelinePayload,
   IDatasourceFields,
-  IPipelineTransaction,
+  IProgressRecord,
 } from "../types";
 import { BaseDatasource } from "./Base.datasource";
 
@@ -48,7 +48,7 @@ export class ESDatasource extends BaseDatasource<ESClientOptions> {
 
     const searchParams: RequestParams.Search = {
       size: limit,
-      // sort: [`${fields.updatedAt}:desc`, `${fields.createdAt}:desc`],
+      sort: [`${fields.updatedAt}:desc`],
       body: {
         query: {
           match_all: {},
@@ -60,11 +60,8 @@ export class ESDatasource extends BaseDatasource<ESClientOptions> {
     const response: IESResponse = await this.client.search(searchParams);
     const records = response.body.hits.hits.map((h) => h._source);
 
-    const transaction: IPipelineTransaction = {
-      id: nanoid(),
-      steps: [this.id],
-    };
-    const nextPayload: IPipelinePayload = { transaction, records };
+    const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
+    const nextPayload: IPipelinePayload = { records, progress };
     this.bus.emit(DatasourceEvents.NEXT, nextPayload);
   }
 }

@@ -3,7 +3,12 @@ import _ from "lodash";
 import { injectable, inject } from "inversify";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import { IStoragePayload, StorageEvents } from "../types";
+import {
+  IStoragePayload,
+  StorageEvents,
+  IProgressRecord,
+  IPipelinePayload,
+} from "../types";
 import { BaseStorage } from "./Base.storage";
 import * as helpers from "../helpers";
 
@@ -37,12 +42,9 @@ export class FileStorage extends BaseStorage {
       );
     }
 
-    const nextPayload: IStoragePayload = {
-      ...payload,
-      transaction: {
-        id: payload.transaction.id,
-        steps: [...payload.transaction.steps, this.id],
-      },
+    const progress: IProgressRecord = { ...payload.progress, storage: this.id };
+    const nextPayload: IPipelinePayload = {
+      progress,
       records: payload.records.map((r) => _.get(r, fields.id)),
     };
     this.bus.emit(StorageEvents.NEXT, nextPayload);

@@ -6,7 +6,12 @@ import {
 } from "@elastic/elasticsearch";
 import { ILogger } from "@nodeplusplus/xregex-logger";
 
-import { IStoragePayload, StorageEvents } from "../types";
+import {
+  IStoragePayload,
+  StorageEvents,
+  IProgressRecord,
+  IPipelinePayload,
+} from "../types";
 import { BaseStorage } from "./Base.storage";
 
 @injectable()
@@ -58,12 +63,9 @@ export class ESStorage extends BaseStorage<ESClientOptions> {
       await this.client.bulk({ body: operators });
     }
 
-    const nextPayload = {
-      ...payload,
-      transaction: {
-        id: payload.transaction.id,
-        steps: [...payload.transaction.steps, this.id],
-      },
+    const progress: IProgressRecord = { ...payload.progress, storage: this.id };
+    const nextPayload: IPipelinePayload = {
+      progress,
       records: payload.records.map((r) => _.get(r, fields.id)),
     };
     this.bus.emit(StorageEvents.NEXT, nextPayload);

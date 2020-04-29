@@ -1,8 +1,6 @@
 import { IPipeline, IPipelinePayload } from "./Pipeline";
 
-export interface IDatasource extends IPipeline {
-  getInfo(): { id: string; options: IDatasourceOpts };
-}
+export interface IDatasource extends IPipeline {}
 
 export interface IDatasourcePayload extends IPipelinePayload {
   datasource: {
@@ -32,4 +30,5 @@ export interface IDatasourceFields {
 
 export enum DatasourceEvents {
   NEXT = "dattasource.next",
+  DONE = "dattasource.done",
 }
