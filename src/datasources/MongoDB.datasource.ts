@@ -61,9 +61,5 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
     };
     const nextPayload: IPipelinePayload = { transaction, records };
     this.bus.emit(DatasourceEvents.NEXT, nextPayload);
-
-    // Trigger done event to allow other component compare results
-    const donePayload: IPipelinePayload = { records: [] };
-    this.bus.emit(DatasourceEvents.DONE, donePayload);
   }
 }

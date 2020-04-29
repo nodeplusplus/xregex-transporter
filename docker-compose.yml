@@ -1,0 +1,28 @@
+version: "3.5"
+
+services:
+  elasticsearch:
+    build:
+      context: docker/elasticsearch/
+      args:
+        ELK_VERSION: $ELK_VERSION
+    volumes:
+      - type: bind
+        source: ./docker//elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      LS_JAVA_OPTS: $ELK_JAVA_OPTS
+      ELASTIC_PASSWORD: $ELASTICSEARCH_PASSWORD
+
+  mongodb:
+    image: "mongo:${MONGO_VERSION}"
+    command: mongod --wiredTigerCacheSizeGB $MONGODB_WIRED_TIER_CACHE_SIZE
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD

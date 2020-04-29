@@ -59,10 +59,5 @@ export class FileDatasource extends BaseDatasource {
       const nextPayload: IPipelinePayload = { transaction, records };
       this.bus.emit(DatasourceEvents.NEXT, nextPayload);
     });
-    pipeline.on("end", () => {
-      // Trigger done event to allow other component compare results
-      const donePayload: IPipelinePayload = { records: [] };
-      this.bus.emit(DatasourceEvents.DONE, donePayload);
-    });
   }
 }

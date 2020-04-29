@@ -8,6 +8,7 @@
   },
   "bugs": "https://github.com/nodeplusplus/xregex-transporter/issues",
   "dependencies": {
+    "@elastic/elasticsearch": "^7.6.1",
     "@nodeplusplus/xregex-filter": "^1.0.0",
     "@nodeplusplus/xregex-json": "^1.0.0",
     "@nodeplusplus/xregex-logger": "^1.0.0",

@@ -27,6 +27,16 @@ datasources:
         id: "id"
         createdAt: "createdAt"
         updatedAt: "updatedAt"
+  - id: datasource.es
+    type: ESDatasource
+    opts:
+      connection:
+        uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
+        database: !ENV [XTRANSPORTER_ES_DATABASE, "test*"]
+      fields:
+        id: "id"
+        createdAt: "createdAt"
+        updatedAt: "updatedAt"
 
 storages:
   - id: storage.file.json
@@ -47,6 +57,16 @@ storages:
         collection: !ENV [XTRANSPORTER_MONGODB_DATABASE, "storage"]
         clientOpts:
           useUnifiedTopology: true
+      fields:
+        id: "id"
+        createdAt: "createdAt"
+        updatedAt: "updatedAt"
+  - id: storage.es
+    type: ESStorage
+    opts:
+      connection:
+        uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
+        database: !ENV [XTRANSPORTER_ES_DATABASE, "test"]
       fields:
         id: "id"
         createdAt: "createdAt"

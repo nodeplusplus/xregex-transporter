@@ -15,8 +15,12 @@ import {
   IDatasourceOpts,
   IStorageOpts,
 } from "../types";
-import { FileDatasource, MongoDBDatasource } from "../datasources";
-import { FileStorage, MongoDBStorage } from "../storages";
+import {
+  FileDatasource,
+  MongoDBDatasource,
+  ESDatasource,
+} from "../datasources";
+import { FileStorage, MongoDBStorage, ESStorage } from "../storages";
 import {
   PassthroughPipeline,
   ParserPipeline,
@@ -53,6 +57,10 @@ export class TemplateBuilder extends BaseBuilder {
         this.addDatasource(MongoDBDatasource);
         continue;
       }
+      if (datasource.type === ESDatasource.name) {
+        this.addDatasource(ESDatasource);
+        continue;
+      }
       throw new Error(`Datasource ${datasource.type} is not supported!`);
     }
   }
@@ -65,6 +73,10 @@ export class TemplateBuilder extends BaseBuilder {
       }
       if (storage.type === MongoDBStorage.name) {
         this.addStorage(MongoDBStorage);
+        continue;
+      }
+      if (storage.type === ESStorage.name) {
+        this.addStorage(ESStorage);
         continue;
       }
       throw new Error(`Storage ${storage.type} is not supported!`);

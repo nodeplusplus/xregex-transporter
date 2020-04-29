@@ -100,7 +100,7 @@ export class XTransporter implements IXTransporter {
 
       const storageIds = this.storages.map((s) => s.getInfo().id);
 
-      // @TODO: Race condition here with 2 event listener
+      // @TODO: Solve rare condition here with 2 event listener
       this.bus.on(DatasourceEvents.NEXT, (payload) => {
         for (let storageId of storageIds) {
           datasourceTransactionIds.push(
@@ -111,7 +111,6 @@ export class XTransporter implements IXTransporter {
             ].join("/")
           );
         }
-        done();
       });
       this.bus.on(StorageEvents.NEXT, (payload) => {
         storageTransactionIds.push(
