@@ -4,9 +4,10 @@ export interface IDatasource extends IPipeline {}
 
 export interface IDatasourceContext extends IPipelineContext {}
 
-export interface IDatasourceOpts<CCO = any> {
+export interface IDatasourceOpts<CCO = any, EO = any> {
   connection: IDatasourceConnection<CCO>;
   fields: IDatasourceFields;
+  execOpts: EO;
 }
 
 export interface IDatasourceConnection<CO = any> {

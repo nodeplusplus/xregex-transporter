@@ -12,11 +12,16 @@ import {
 } from "../types";
 
 @injectable()
-export abstract class BaseDatasource<CCO = any> implements IDatasource {
+export abstract class BaseDatasource<CCO = any, EO = IDatasourceOptsExecOpts>
+  implements IDatasource {
   @inject("BUS") protected bus!: IEventBus<IDatasourceContext>;
 
   protected id!: string;
-  protected options!: IDatasourceOpts<CCO>;
+  protected options!: IDatasourceOpts<CCO, EO>;
+
+  constructor() {
+    this.handleError = this.handleError.bind(this);
+  }
 
   public async start() {
     this.bus.on(TransporterEvents.NEXT, this.exec.bind(this));
@@ -31,4 +36,11 @@ export abstract class BaseDatasource<CCO = any> implements IDatasource {
   }
 
   abstract exec(ctx: IDatasourceContext): Promise<IPipelineContext | void>;
+  abstract handleError(error: any): any;
+}
+
+export interface IDatasourceOptsExecOpts {
+  ids?: string;
+  filter?: any;
+  limit?: number;
 }

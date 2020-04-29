@@ -16,8 +16,6 @@ datasources:
         updatedAt: "updatedAt"
       execOpts:
         limit: 100
-        filter:
-          id: 1
   - id: datasource.mongodb
     type: MongoDBDatasource
     opts:

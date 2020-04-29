@@ -49,12 +49,17 @@ export class FileDatasource extends BaseDatasource {
     ]);
 
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
-      let records = rows.map((r) => r.value);
+      let records = rows.map((r) => r.value).filter(Boolean);
       if (filter && !_.isEmpty(filter)) records = records.filter(sift(filter));
 
       const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
       const nextCtx: IPipelineContext = { records, progress };
       this.bus.emit(DatasourceEvents.NEXT, nextCtx);
     });
+    pipeline.on("error", this.handleError);
+  }
+
+  public handleError(error: Error) {
+    this.logger.error(`DATASOURCE:FILE.ERROR: ${error.stack || error.message}`);
   }
 }

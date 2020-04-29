@@ -57,12 +57,26 @@ export class ESDatasource extends BaseDatasource<ESClientOptions> {
     };
     if (database) searchParams.index = database;
     if (filter) searchParams.body = filter;
-    const response: IESResponse = await this.client.search(searchParams);
+    const response: IESResponse = await this.client
+      .search(searchParams)
+      .catch(this.handleError);
     const records = response.body.hits.hits.map((h) => h._source);
 
     const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
     const nextCtx: IPipelineContext = { records, progress };
     this.bus.emit(DatasourceEvents.NEXT, nextCtx);
+  }
+
+  public handleError(error: IESResponseError) {
+    const errors: string[] = Array.isArray(error.meta.body?.error?.root_cause)
+      ? error.meta.body.error.root_cause.map(
+          (e: { type: string; reason: string }) =>
+            `DATASOURCE:ES:ERROR.${e.type.toUpperCase()}: ${e.reason}`
+        )
+      : ["DATASOURCE:ES:ERROR.INVALID_SEARCH_PARAMS"];
+
+    errors.map(this.logger.error.bind(this.logger));
+    return { body: { hits: { hits: [] } } };
   }
 }
 
@@ -70,6 +84,16 @@ interface IESResponse<S = any> {
   body: {
     hits: {
       hits: Array<{ _id: string; _index: string; _source: S }>;
+    };
+  };
+}
+
+interface IESResponseError extends Error {
+  meta: {
+    body: {
+      error: {
+        root_cause: Array<{ type: string; reason: string }>;
+      };
     };
   };
 }

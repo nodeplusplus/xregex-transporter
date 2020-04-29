@@ -17,6 +17,10 @@ export abstract class BaseStorage<CCO = any, EO = any> implements IStorage {
   protected id!: string;
   protected options!: IStorageOpts<CCO, EO>;
 
+  constructor() {
+    this.handleError = this.handleError.bind(this);
+  }
+
   public async start() {
     this.bus.on(PipelineEvents.NEXT, this.exec.bind(this));
   }
@@ -29,4 +33,5 @@ export abstract class BaseStorage<CCO = any, EO = any> implements IStorage {
     this.options = options.opts;
   }
   abstract exec(ctx: IPipelineContext): Promise<IPipelineContext | void>;
+  abstract handleError(error: any): any;
 }

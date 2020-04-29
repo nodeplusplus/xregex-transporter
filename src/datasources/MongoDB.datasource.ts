@@ -24,6 +24,11 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
   private client!: MongoClient;
   private collection!: MongoCollection;
 
+  constructor() {
+    super();
+    this.handleError = this.handleError.bind(this);
+  }
+
   public async start() {
     const { uri, database, collection, clientOpts } = this.options.connection;
     this.client = await MongoClient.connect(uri, clientOpts);
@@ -53,10 +58,16 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
         [fields.updatedAt, -1],
         [fields.createdAt, -1],
       ])
-      .toArray();
+      .toArray()
+      .catch(this.handleError);
 
     const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
     const nextCtx: IPipelineContext = { records, progress };
     this.bus.emit(DatasourceEvents.NEXT, nextCtx);
+  }
+
+  public handleError(error: Error) {
+    this.logger.error(`DATASOURCE:MONGODB.ERROR: ${error.message}`);
+    return [];
   }
 }

@@ -46,9 +46,15 @@ export class ESStorage extends BaseStorage<
   public async exec(ctx: Required<IStorageContext>) {
     const fields = this.options.fields;
 
-    const operators = this.createBulkRequest(ctx.records);
+    const operators = this.createBulkOperators(ctx.records);
     if (operators.length) {
-      await this.client.bulk({ body: operators, ...this.options.execOpts });
+      const response = await this.client
+        .bulk({ body: operators, ...this.options.execOpts })
+        .catch(this.handleError);
+
+      if (response && response.body.error) {
+        this.logErrorItems(response.body.items);
+      }
     }
 
     const progress: IProgressRecord = { ...ctx.progress, storage: this.id };
@@ -59,7 +65,19 @@ export class ESStorage extends BaseStorage<
     this.bus.emit(StorageEvents.NEXT, nextCtx);
   }
 
-  private createBulkRequest(records?: any[]): any[] {
+  public handleError(error: IESResponseError) {
+    const errors: string[] = Array.isArray(error.meta.body?.error?.root_cause)
+      ? error.meta.body.error.root_cause.map(
+          (e: { type: string; reason: string }) =>
+            `ES_STORAGE:EXEC.${e.type.toUpperCase()}: ${e.reason}`
+        )
+      : ["ES_STORAGE:EXEC.INVALID_SEARCH_PARAMS"];
+
+    errors.map(this.logger.error.bind(this.logger));
+    return;
+  }
+
+  private createBulkOperators(records?: any[]): any[] {
     if (!Array.isArray(records) || !records.length) return [];
 
     const database = this.options.connection.database || "es";
@@ -91,4 +109,30 @@ export class ESStorage extends BaseStorage<
 
     return body;
   }
+
+  private logErrorItems(
+    items: Array<{
+      _id: string;
+      _index: string;
+      error: { type: string; resason: string };
+    }>
+  ) {
+    items
+      .filter((item) => item.error)
+      .forEach(({ error }) =>
+        this.logger.error(
+          `STORAGE:ES.ERROR.${error.type.toUpperCase()}: ${error.resason}`
+        )
+      );
+  }
+}
+
+interface IESResponseError extends Error {
+  meta: {
+    body: {
+      error: {
+        root_cause: Array<{ type: string; reason: string }>;
+      };
+    };
+  };
 }

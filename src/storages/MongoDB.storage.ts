@@ -42,26 +42,12 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
   public async exec(ctx: Required<IStorageContext>) {
     const fields = this.options.fields;
 
-    const operators: any[] = ctx.records.reduce(
-      (o, record) => [
-        ...o,
-        {
-          updateOne: {
-            filter: { id: _.get(record, fields.id) },
-            update: {
-              $set: { ...record, [fields.updatedAt]: new Date() },
-              $setOnInsert: { [fields.createdAt]: new Date() },
-            },
-            upsert: true,
-          },
-        },
-      ],
-      []
-    );
-
+    const operators = this.createBulkOperators(ctx.records);
     if (operators.length) {
       // See https://docs.mongodb.com/manual/core/bulk-write-operations/#ordered-vs-unordered-operations
-      await this.collection.bulkWrite(operators, { ordered: false });
+      await this.collection
+        .bulkWrite(operators, { ordered: false })
+        .catch(this.handleError);
     }
 
     const progress: IProgressRecord = { ...ctx.progress, storage: this.id };
@@ -71,4 +57,41 @@ export class MongoDBStorage extends BaseStorage<MongoClientOptions> {
     };
     this.bus.emit(StorageEvents.NEXT, nextCtx);
   }
+
+  public handleError(error: IMongoDBResponseError) {
+    error.result.result.writeErrors.forEach(({ err }) => {
+      this.logger.error(`STORAGE:MONGODB.ERROR.${err.code}: ${err.errmsg}`);
+    });
+  }
+
+  private createBulkOperators(records: any[]) {
+    const fields = this.options.fields;
+    const operators: any[] = [];
+
+    for (let record of records) {
+      const id = _.get(record, fields.id);
+      if (!id) continue;
+
+      operators.push({
+        updateOne: {
+          filter: { id },
+          update: {
+            $set: { ...record, [fields.updatedAt]: new Date() },
+            $setOnInsert: { [fields.createdAt]: new Date() },
+          },
+          upsert: true,
+        },
+      });
+    }
+
+    return operators;
+  }
+}
+
+export interface IMongoDBResponseError extends Error {
+  result: {
+    result: {
+      writeErrors: Array<{ err: { code: number; errmsg: string } }>;
+    };
+  };
 }

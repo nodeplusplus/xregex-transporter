@@ -22,6 +22,7 @@ export class FileStorage extends BaseStorage {
     const uri = this.options.connection.uri;
     await helpers.file.ensureExist(uri);
     this.output = fs.createWriteStream(uri, { flags: "a" });
+    this.output.on("error", this.handleError);
 
     super.start();
     this.logger.info(`STORAGE:FILE.STARTED`, { id: this.id });
@@ -48,5 +49,9 @@ export class FileStorage extends BaseStorage {
       records: ctx.records.map((r) => _.get(r, fields.id)),
     };
     this.bus.emit(StorageEvents.NEXT, nextCtx);
+  }
+
+  public handleError(error: Error) {
+    this.logger.error(`STORAGE:FILE.ERROR: ${error.stack || error.message}`);
   }
 }
