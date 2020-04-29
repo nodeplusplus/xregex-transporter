@@ -1,5 +1,6 @@
 import fs from "fs";
 import _ from "lodash";
+import sift from "sift";
 import { nanoid } from "nanoid";
 import { injectable, inject } from "inversify";
 import { parser } from "stream-json";
@@ -38,7 +39,7 @@ export class FileDatasource extends BaseDatasource {
   }
 
   public async exec(ctx: IDatasourceContext) {
-    const { limit } = { limit: 100, ...this.options.query };
+    const { limit, filter } = { limit: 100, ...this.options.execOpts };
 
     const pipeline = chain([
       this.input,
@@ -48,7 +49,8 @@ export class FileDatasource extends BaseDatasource {
     ]);
 
     pipeline.on("data", (rows: Array<{ key: number; value: any }>) => {
-      const records = rows.map((r) => r.value);
+      let records = rows.map((r) => r.value);
+      if (filter && !_.isEmpty(filter)) records = records.filter(sift(filter));
 
       const progress: IProgressRecord = { id: nanoid(), datasource: this.id };
       const nextCtx: IPipelineContext = { records, progress };

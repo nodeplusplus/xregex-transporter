@@ -42,7 +42,7 @@ export class MongoDBDatasource extends BaseDatasource<MongoClientOptions> {
   }
 
   public async exec(ctx: IDatasourceContext) {
-    const { limit, filter } = { limit: 100, ...this.options.query };
+    const { limit, filter } = { limit: 100, ...this.options.execOpts };
 
     const fields = this.options.fields as IDatasourceFields;
 

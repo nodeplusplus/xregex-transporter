@@ -36,21 +36,25 @@ export class Progress implements IProgress {
 
       this.bus.on(DatasourceEvents.NEXT, (ctx: Required<IPipelineContext>) => {
         storageIds.map((storage) => this.from({ ...ctx.progress, storage }));
-
         if (this.isDone()) return resolve();
       });
 
       this.bus.on(StorageEvents.NEXT, (ctx: Required<IPipelineContext>) => {
         this.to(ctx.progress);
-
         if (this.isDone()) return resolve();
       });
     });
   }
 
   private isDone(): Boolean {
+    const datasourceIds = this.settings.datasources.map((s) => s.id);
+    const storageIds = this.settings.storages.map((s) => s.id);
+    const min = datasourceIds.length * storageIds.length;
+
     const datasources = Array.from(this.datasources);
     const storages = Array.from(this.storages);
+    // Must exec all round at least 1 time
+    if (datasources.length < min || storages.length < min) return false;
     if (datasources.length !== storages.length) return false;
 
     return _.difference(datasources, storages).length === 0;

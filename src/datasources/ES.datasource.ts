@@ -42,7 +42,7 @@ export class ESDatasource extends BaseDatasource<ESClientOptions> {
   }
 
   public async exec(ctx: IDatasourceContext) {
-    const { filter, limit } = { limit: 100, ...this.options.query };
+    const { limit, filter } = { limit: 100, ...this.options.execOpts };
     const fields = this.options.fields as IDatasourceFields;
     const database = this.options.connection.database as string;
 
