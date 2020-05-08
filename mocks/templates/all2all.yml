@@ -69,7 +69,7 @@ storages:
       connection:
         uri: !ENV [XTRANSPORTER_ES_URI, "http://127.0.0.1:9200"]
         database: !ENV [XTRANSPORTER_ES_DATABASE, "storage"]
-        collection: !ENV [XTRANSPORTER_ES_COLLECTION, "publishedAt,YYYYMMDD"]
+        collection: !ENV [XTRANSPORTER_ES_COLLECTION, "publishedAt:YYYYMMDD"]
       fields:
         id: "id"
         createdAt: "createdAt"

@@ -82,7 +82,7 @@ export class ESStorage extends BaseStorage<
 
     const database = this.options.connection.database || "es";
     const [timestampField, format = "YYYYMMDD"] = (this.options.connection
-      .collection as string).split(",") as [string?, string?];
+      .collection as string).split(":") as [string?, string?];
 
     const fields = this.options.fields;
     const body: any[] = [];
